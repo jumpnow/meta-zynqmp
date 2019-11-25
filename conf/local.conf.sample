@@ -1,0 +1,39 @@
+# local.conf for zcu102-zynqmp dev boards
+# Yocto 2.7 [warrior] 
+# sysvinit system
+
+# avoid some warnings for overrides to unused packages
+BBMASK = "meta-xilinx/meta-xilinx-bsp/recipes-graphics/xorg-driver"
+BBMASK += "meta-xilinx/meta-xilinx-bsp/recipes-xrt/opencl-headers"
+
+DISTRO_FEATURES = "ext2 usbhost ${DISTRO_FEATURES_LIBC}"
+
+# remove pulseaudio since it brings in x11
+DISTRO_FEATURES_BACKFILL_CONSIDERED += "pulseaudio opengl"
+
+PREFERRED_PROVIDER_jpeg = "libjpeg-turbo"
+
+PREFERRED_PROVIDER_udev = "eudev"
+VIRTUAL-RUNTIME_init_manager = "sysvinit"
+
+IMAGE_FSTYPES = "tar.xz"
+
+#DL_DIR = "${HOME}/oe-sources"
+
+SSTATE_DIR = "${TOPDIR}/sstate-cache"
+TMPDIR = "${TOPDIR}/tmp"
+
+MACHINE = "zcu102-zynqmp"
+BBMULTICONFIG ?= "pmu"
+
+DISTRO = "poky"
+PACKAGE_CLASSES = "package_ipk"
+
+SDKMACHINE = "x86_64"
+EXTRA_IMAGE_FEATURES = "debug-tweaks"
+USER_CLASSES = "image-mklibs image-prelink"
+
+PATCHRESOLVE = "noop"
+INHERIT += "rm_work"
+RM_OLD_IMAGE = "1"
+CONF_VERSION = "1"
