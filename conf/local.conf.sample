@@ -18,13 +18,13 @@ VIRTUAL-RUNTIME_init_manager = "sysvinit"
 
 IMAGE_FSTYPES = "tar.xz"
 
-#DL_DIR = "${HOME}/oe-sources"
+#DL_DIR = "/src/oe"
 
 SSTATE_DIR = "${TOPDIR}/sstate-cache"
 TMPDIR = "${TOPDIR}/tmp"
 
 MACHINE = "zcu102-zynqmp"
-BBMULTICONFIG = "pmu"
+BBMULTICONFIG ?= "pmu"
 
 DISTRO = "poky"
 PACKAGE_CLASSES = "package_ipk"

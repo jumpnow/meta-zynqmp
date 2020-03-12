@@ -13,7 +13,7 @@ BBLAYERS ?= " \
   ${HOME}/poky-warrior/meta-openembedded/meta-perl \
   ${HOME}/poky-warrior/meta-openembedded/meta-python \
   ${HOME}/poky-warrior/meta-security \
-  ${HOME}/poky-warrior/xilinx/meta-xilinx/meta-xilinx-bsp \
-  ${HOME}/poky-warrior/xilinx/meta-xilinx/meta-xilinx-standalone \
+  ${HOME}/poky-warrior/meta-xilinx/meta-xilinx-bsp \
+  ${HOME}/poky-warrior/meta-xilinx/meta-xilinx-standalone \
   ${HOME}/zynqmp/meta-zynqmp \
 "
