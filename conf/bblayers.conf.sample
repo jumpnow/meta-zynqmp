@@ -15,5 +15,5 @@ BBLAYERS ?= " \
   ${HOME}/poky-warrior/meta-security \
   ${HOME}/poky-warrior/xilinx/meta-xilinx/meta-xilinx-bsp \
   ${HOME}/poky-warrior/xilinx/meta-xilinx/meta-xilinx-standalone \
-  ${HOME}/meta-zynqmp \
+  ${HOME}/zynqmp/meta-zynqmp \
 "

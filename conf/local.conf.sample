@@ -24,7 +24,7 @@ SSTATE_DIR = "${TOPDIR}/sstate-cache"
 TMPDIR = "${TOPDIR}/tmp"
 
 MACHINE = "zcu102-zynqmp"
-BBMULTICONFIG ?= "pmu"
+BBMULTICONFIG = "pmu"
 
 DISTRO = "poky"
 PACKAGE_CLASSES = "package_ipk"
