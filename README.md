@@ -1,6 +1,6 @@
-## meta-idexx-zynqmp
+## meta-zynqmp
 
-Custom meta-layer for zynqmp boards.
+Custom generic meta-layer for zynqmp boards.
 
 Only tested with a zcu102 dev board.
 
@@ -9,7 +9,7 @@ Things that go in this layer
 * kernel / driver customization 
 * u-boot customization 
 * PMU customization
-* PMU config object fetch package (now written)
+* PMU config object fetch package (uses default from embeddedsw repo)
 * FPGA bitstream fetch package (not written)
 * userland board specific packages
 
@@ -27,21 +27,23 @@ Examples for local.conf, bblayers.conf and pmu.conf are provided.
 Requires:
 
     URI: git://git.yoctoproject.org/poky.git
-    branch: warrior
+    branch: zeus
 
     URI: git://git.openembedded.org/meta-openembedded
-    branch: warrior
+    branch: zeus
 
     URI: git://git.yoctoproject.org/meta-security.git
-    branch: warrior
+    branch: zeus
 
     URI: https://github.com/Xilinx/meta-xilinx
-    branch: warrior
+    branch: zeus
 
 Latest commits:
 
-    poky c9a1a60
-    meta-openembedded a24acf9
-    meta-security 4f7be0d
-    meta-xilinx 391c705
+    poky 04d71b42e7
+    meta-openembedded bb65c27a7
+    meta-security ecd8c30
+    meta-xilinx b82343a
 
+
+meta-zynqmp layer maintainer: Scott Ellis <scott@jumpnowtek.com>

@@ -1,5 +1,5 @@
 # local.conf for zcu102-zynqmp dev boards
-# Yocto 2.7 [warrior] 
+# Yocto 3.0 [zeus] 
 # sysvinit system
 
 # avoid some warnings for overrides to unused packages
@@ -18,13 +18,14 @@ VIRTUAL-RUNTIME_init_manager = "sysvinit"
 
 IMAGE_FSTYPES = "tar.xz"
 
-#DL_DIR = "${HOME}/oe-sources"
+#DL_DIR = "/src/oe"
 
+# do not change as pmu-firmware/bootloader build has issues (TODO)
 SSTATE_DIR = "${TOPDIR}/sstate-cache"
 TMPDIR = "${TOPDIR}/tmp"
 
 MACHINE = "zcu102-zynqmp"
-BBMULTICONFIG ?= "pmu"
+BBMULTICONFIG = "pmu"
 
 DISTRO = "poky"
 PACKAGE_CLASSES = "package_ipk"
