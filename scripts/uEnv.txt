@@ -1,0 +1,12 @@
+machine_name=zcu102-zynqmp
+bootpart=0:2
+bootdir=/boot
+kernel_image=Image
+kernel_load_address=0x80000
+devicetree_image=zynqmp-zcu102-rev1.0.dtb
+devicetree_load_address=0x4000000
+bootargs=earlycon clk_ignore_unused root=/dev/mmcblk0p2 rw rootwait
+loadkernel=load mmc ${bootpart} ${kernel_load_address} ${bootdir}/${kernel_image}
+loaddtb=load mmc ${bootpart} ${devicetree_load_address} ${bootdir}/${devicetree_image}
+bootkernel=run loadkernel && run loaddtb && booti ${kernel_load_address} - ${devicetree_load_address}
+uenvcmd=run bootkernel

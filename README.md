@@ -38,12 +38,16 @@ Requires:
     URI: https://github.com/Xilinx/meta-xilinx
     branch: zeus
 
+    URI: https://github.com/jumpnow/meta-jumpnow.git
+    branch: zeus
+
 Latest commits:
 
     poky 04d71b42e7
     meta-openembedded bb65c27a7
     meta-security ecd8c30
     meta-xilinx b82343a
+    meta-jumpnow 6869932
 
 
 meta-zynqmp layer maintainer: Scott Ellis <scott@jumpnowtek.com>
