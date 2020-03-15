@@ -46,14 +46,14 @@ dd if=/dev/zero of=$DEV bs=1024 count=1024
 
 # Minimum required 2 partitions
 # Sectors are 512 bytes
-# 0     : 1MB, no partition, MBR then empty
-# 2048  : 128 MB, FAT partition, bootloader, kernel, dtb
-# 264192: 2GB+, linux partition, root filesystem
+# 0     : 64KB, no partition, MBR then empty
+# 128   : 64 MB, FAT partition, bootloader
+# 131200: 2GB+, linux partition, root filesystem
 
-echo "=== Creating 2 partitions ==="
+echo -e "\n=== Creating 2 partitions ===\n"
 {
-echo 2048,262144,0xC,*
-echo 264192,+,0x83,-
+echo 128,131072,0x0C,*
+echo 131200,+,0x83,-
 } | sfdisk $DEV
 
 sleep 1
