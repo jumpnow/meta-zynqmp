@@ -83,7 +83,7 @@ else
 fi
 
 echo "Formatting $DEV as ext4"
-sudo mkfs.ext4 -q -L ROOT $DEV
+sudo mkfs.ext4 -q -F -L ROOT $DEV
 
 echo "Mounting $DEV"
 sudo mount $DEV /media/card
