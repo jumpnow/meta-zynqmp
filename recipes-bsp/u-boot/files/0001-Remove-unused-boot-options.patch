@@ -1,0 +1,31 @@
+From 2b9b2ab1822ff7db6a465dd2fad2a1b452ba781e Mon Sep 17 00:00:00 2001
+From: Scott Ellis <scott@jumpnowtek.com>
+Date: Sat, 14 Mar 2020 17:13:26 +0000
+Subject: [PATCH] Remove unused boot options
+
+---
+ include/configs/xilinx_zynqmp.h | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/include/configs/xilinx_zynqmp.h b/include/configs/xilinx_zynqmp.h
+index 1356314096..06a7c7e787 100644
+--- a/include/configs/xilinx_zynqmp.h
++++ b/include/configs/xilinx_zynqmp.h
+@@ -284,14 +284,7 @@
+ 	"jtag "
+ 
+ #define BOOT_TARGET_DEVICES(func) \
+-	BOOT_TARGET_DEVICES_JTAG(func) \
+ 	BOOT_TARGET_DEVICES_MMC(func) \
+-	BOOT_TARGET_DEVICES_QSPI(func) \
+-	BOOT_TARGET_DEVICES_NAND(func) \
+-	BOOT_TARGET_DEVICES_USB(func) \
+-	BOOT_TARGET_DEVICES_SCSI(func) \
+-	BOOT_TARGET_DEVICES_PXE(func) \
+-	BOOT_TARGET_DEVICES_DHCP(func) \
+ 	func(XILINX, xilinx, na)
+ 
+ #include <config_distro_bootcmd.h>
+-- 
+2.17.1
+
