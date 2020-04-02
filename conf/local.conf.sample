@@ -1,14 +1,22 @@
 # local.conf for zcu102-zynqmp dev boards
-# Yocto 3.0 [zeus] 
+# Yocto 3.0 [zeus]
 # sysvinit system
 
+# mask wireguard from meta-openembedded/meta-networking
+# use version in meta-jumpnow to support kernels < 5.6
+# with wireguard-linux-compat
+BBMASK = "meta-networking/recipes-kernel/wireguard"
+
+# mask cryptodev from poky/meta
+# use version from meta-jumpnow to support kernels > 5.4
+BBMASK += "meta/recipes-kernel/cryptodev"
+
 # avoid some warnings for overrides to unused packages
-BBMASK = "meta-xilinx/meta-xilinx-bsp/recipes-graphics/xorg-driver"
+BBMASK += "meta-xilinx/meta-xilinx-bsp/recipes-graphics/xorg-driver"
 BBMASK += "meta-xilinx/meta-xilinx-bsp/recipes-xrt/opencl-headers"
 
 DISTRO_FEATURES = "ext2 usbhost ${DISTRO_FEATURES_LIBC}"
 
-# remove pulseaudio since it brings in x11
 DISTRO_FEATURES_BACKFILL_CONSIDERED += "pulseaudio opengl"
 
 PREFERRED_PROVIDER_jpeg = "libjpeg-turbo"
@@ -18,7 +26,7 @@ VIRTUAL-RUNTIME_init_manager = "sysvinit"
 
 IMAGE_FSTYPES = "tar.xz"
 
-#DL_DIR = "/src/oe"
+# DL_DIR = "/src/oe"
 
 # do not change as pmu-firmware/bootloader build has issues (TODO)
 SSTATE_DIR = "${TOPDIR}/sstate-cache"
@@ -26,6 +34,9 @@ TMPDIR = "${TOPDIR}/tmp"
 
 MACHINE = "zcu102-zynqmp"
 BBMULTICONFIG = "pmu"
+
+# uncomment for kernels < 5.6
+WIREGUARD_COMPAT = "1"
 
 DISTRO = "poky"
 PACKAGE_CLASSES = "package_ipk"
