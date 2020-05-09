@@ -30,8 +30,8 @@ else
 fi
 
 if [ -z "$OETMP" ]; then
-    if [ -d "${HOME}/xilinx/build/tmp" ]; then
-        OETMP="${HOME}/xilinx/build/tmp"
+    if [ -d "../../build/tmp" ]; then
+        OETMP="../../build/tmp"
     else
         echo "OETMP not defined"
         exit 1

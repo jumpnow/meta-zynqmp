@@ -31,11 +31,8 @@ if [ ! -d /media/card ]; then
 fi
 
 if [ -z "$OETMP" ]; then
-    if [ -d "${HOME}/xilinx/build/tmp" ]; then
-        OETMP="${HOME}/xilinx/build/tmp"
-    else
-        echo "OETMP not defined"
-        exit 1
+    if [ -d "../../build/tmp" ]; then
+        OETMP="../../build/tmp"
     fi
 fi
 
