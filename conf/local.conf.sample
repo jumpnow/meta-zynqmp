@@ -7,10 +7,6 @@
 # with wireguard-linux-compat
 BBMASK = "meta-networking/recipes-kernel/wireguard"
 
-# mask cryptodev from poky/meta
-# use version from meta-jumpnow to support kernels > 5.4
-BBMASK += "meta/recipes-kernel/cryptodev"
-
 # avoid some warnings for overrides to unused packages
 BBMASK += "meta-xilinx/meta-xilinx-bsp/recipes-graphics/xorg-driver"
 BBMASK += "meta-xilinx/meta-xilinx-bsp/recipes-xrt/opencl-headers"
