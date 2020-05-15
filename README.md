@@ -43,11 +43,11 @@ Requires:
 
 Latest commits:
 
-    poky cba9674143
+    poky eac84e73e8
     meta-openembedded 9e60d3066
     meta-security ecd8c30
     meta-xilinx b82343a
-    meta-jumpnow 0d36024
+    meta-jumpnow d605442
 
 
 meta-zynqmp layer maintainer: Scott Ellis <scott@jumpnowtek.com>
