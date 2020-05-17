@@ -43,7 +43,7 @@ Requires:
 
 Latest commits:
 
-    poky eac84e73e8
+    poky 05e6558514
     meta-openembedded 9e60d3066
     meta-security ecd8c30
     meta-xilinx b82343a
