@@ -47,7 +47,7 @@ Latest commits:
     meta-openembedded 9e60d3066
     meta-security ecd8c30
     meta-xilinx b82343a
-    meta-jumpnow d605442
+    meta-jumpnow 1c39af3
 
 
 meta-zynqmp layer maintainer: Scott Ellis <scott@jumpnowtek.com>
