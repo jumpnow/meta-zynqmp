@@ -1,0 +1,990 @@
+From 04721fbad4101232d683a6a3a2c7036217242347 Mon Sep 17 00:00:00 2001
+From: Scott Ellis <scott@jumpnowtek.com>
+Date: Tue, 30 Jun 2020 13:05:18 +0000
+Subject: [PATCH] Add zynqmp aes module
+
+---
+ .../bindings/crypto/xlnx,zynqmp-aes.txt       |  12 +
+ arch/arm64/boot/dts/xilinx/zynqmp.dtsi        |   4 +
+ crypto/af_alg.c                               |   7 +
+ crypto/algif_skcipher.c                       |  12 +
+ crypto/blkcipher.c                            |   9 +
+ crypto/skcipher.c                             |  18 +
+ drivers/crypto/Kconfig                        |  11 +
+ drivers/crypto/Makefile                       |   1 +
+ drivers/crypto/zynqmp-aes.c                   | 331 ++++++++++++++++++
+ drivers/firmware/xilinx/zynqmp/firmware.c     | 233 +++++++++++-
+ include/crypto/if_alg.h                       |   2 +
+ include/crypto/skcipher.h                     |  12 +-
+ include/linux/crypto.h                        |  12 +
+ .../linux/firmware/xilinx/zynqmp/firmware.h   |  16 +
+ include/uapi/linux/if_alg.h                   |   1 +
+ 15 files changed, 677 insertions(+), 4 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/crypto/xlnx,zynqmp-aes.txt
+ create mode 100644 drivers/crypto/zynqmp-aes.c
+
+diff --git a/Documentation/devicetree/bindings/crypto/xlnx,zynqmp-aes.txt b/Documentation/devicetree/bindings/crypto/xlnx,zynqmp-aes.txt
+new file mode 100644
+index 000000000000..226bfb9261d7
+--- /dev/null
++++ b/Documentation/devicetree/bindings/crypto/xlnx,zynqmp-aes.txt
+@@ -0,0 +1,12 @@
++Xilinx ZynqMP AES hw acceleration support
++
++The ZynqMP PS-AES hw accelerator is used to encrypt/decrypt
++the given user data.
++
++Required properties:
++- compatible: should contain "xlnx,zynqmp-aes"
++
++Example:
++	zynqmp_aes {
++		compatible = "xlnx,zynqmp-aes";
++	};
+diff --git a/arch/arm64/boot/dts/xilinx/zynqmp.dtsi b/arch/arm64/boot/dts/xilinx/zynqmp.dtsi
+index fb196a153d9e..77b9ae79fa94 100644
+--- a/arch/arm64/boot/dts/xilinx/zynqmp.dtsi
++++ b/arch/arm64/boot/dts/xilinx/zynqmp.dtsi
+@@ -346,6 +346,10 @@
+ 		compatible = "xlnx,zynqmp-keccak-384";
+ 	};
+ 
++	xlnx_aes: zynqmp_aes {
++		compatible = "xlnx,zynqmp-aes";
++	};
++
+ 	amba_apu: amba_apu@0 {
+ 		compatible = "simple-bus";
+ 		#address-cells = <2>;
+diff --git a/crypto/af_alg.c b/crypto/af_alg.c
+index 337cf382718e..eec8da2a647a 100644
+--- a/crypto/af_alg.c
++++ b/crypto/af_alg.c
+@@ -259,6 +259,13 @@ static int alg_setsockopt(struct socket *sock, int level, int optname,
+ 		if (!type->setauthsize)
+ 			goto unlock;
+ 		err = type->setauthsize(ask->private, optlen);
++		break;
++	case ALG_SET_KEY_TYPE:
++		if (sock->state == SS_CONNECTED)
++			goto unlock;
++		if (!type->setkeytype)
++			goto unlock;
++		err = type->setkeytype(ask->private, optval, optlen);
+ 	}
+ 
+ unlock:
+diff --git a/crypto/algif_skcipher.c b/crypto/algif_skcipher.c
+index 8ae4170aaeb4..62d2945575a1 100644
+--- a/crypto/algif_skcipher.c
++++ b/crypto/algif_skcipher.c
+@@ -345,6 +345,17 @@ static int skcipher_setkey(void *private, const u8 *key, unsigned int keylen)
+ 	return err;
+ }
+ 
++static int skcipher_setkeytype(void *private, const u8 *key,
++			       unsigned int keylen)
++{
++	struct skcipher_tfm *tfm = private;
++	int err;
++
++	err = crypto_skcipher_setkeytype(tfm->skcipher, key, keylen);
++
++	return err;
++}
++
+ static void skcipher_sock_destruct(struct sock *sk)
+ {
+ 	struct alg_sock *ask = alg_sk(sk);
+@@ -411,6 +422,7 @@ static const struct af_alg_type algif_type_skcipher = {
+ 	.bind		=	skcipher_bind,
+ 	.release	=	skcipher_release,
+ 	.setkey		=	skcipher_setkey,
++	.setkeytype	=	skcipher_setkeytype,
+ 	.accept		=	skcipher_accept_parent,
+ 	.accept_nokey	=	skcipher_accept_parent_nokey,
+ 	.ops		=	&algif_skcipher_ops,
+diff --git a/crypto/blkcipher.c b/crypto/blkcipher.c
+index 6c43a0a17a55..0ac37f1051b3 100644
+--- a/crypto/blkcipher.c
++++ b/crypto/blkcipher.c
+@@ -411,6 +411,14 @@ static int setkey(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
+ 	return cipher->setkey(tfm, key, keylen);
+ }
+ 
++static int setkeytype(struct crypto_tfm *tfm, const u8 *key,
++		      unsigned int keylen)
++{
++	struct blkcipher_alg *cipher = &tfm->__crt_alg->cra_blkcipher;
++
++	return cipher->setkeytype(tfm, key, keylen);
++}
++
+ static int async_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
+ 			unsigned int keylen)
+ {
+@@ -481,6 +489,7 @@ static int crypto_init_blkcipher_ops_sync(struct crypto_tfm *tfm)
+ 	unsigned long addr;
+ 
+ 	crt->setkey = setkey;
++	crt->setkeytype = setkeytype;
+ 	crt->encrypt = alg->encrypt;
+ 	crt->decrypt = alg->decrypt;
+ 
+diff --git a/crypto/skcipher.c b/crypto/skcipher.c
+index d5692e35fab1..96467cc4f717 100644
+--- a/crypto/skcipher.c
++++ b/crypto/skcipher.c
+@@ -601,6 +601,23 @@ static int skcipher_setkey_blkcipher(struct crypto_skcipher *tfm,
+ 	return err;
+ }
+ 
++static int skcipher_setkeytype_blkcipher(struct crypto_skcipher *tfm,
++					 const u8 *key, unsigned int keylen)
++{
++	struct crypto_blkcipher **ctx = crypto_skcipher_ctx(tfm);
++	struct crypto_blkcipher *blkcipher = *ctx;
++	int err;
++
++	crypto_blkcipher_clear_flags(blkcipher, ~0);
++	crypto_blkcipher_set_flags(blkcipher, crypto_skcipher_get_flags(tfm) &
++			CRYPTO_TFM_REQ_MASK);
++	err = crypto_blkcipher_setkeytype(blkcipher, key, keylen);
++	crypto_skcipher_set_flags(tfm, crypto_blkcipher_get_flags(blkcipher) &
++			CRYPTO_TFM_RES_MASK);
++
++	return err;
++}
++
+ static int skcipher_crypt_blkcipher(struct skcipher_request *req,
+ 				    int (*crypt)(struct blkcipher_desc *,
+ 						 struct scatterlist *,
+@@ -667,6 +684,7 @@ static int crypto_init_skcipher_ops_blkcipher(struct crypto_tfm *tfm)
+ 	tfm->exit = crypto_exit_skcipher_ops_blkcipher;
+ 
+ 	skcipher->setkey = skcipher_setkey_blkcipher;
++	skcipher->setkeytype = skcipher_setkeytype_blkcipher;
+ 	skcipher->encrypt = skcipher_encrypt_blkcipher;
+ 	skcipher->decrypt = skcipher_decrypt_blkcipher;
+ 
+diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
+index 689fec4c589f..93979edc6f16 100644
+--- a/drivers/crypto/Kconfig
++++ b/drivers/crypto/Kconfig
+@@ -672,6 +672,17 @@ config CRYPTO_DEV_XILINX_RSA
+ 	  Xilinx processors have RSA module accelerator. Select this if you
+ 	  want to use the ZynqMP module for RSA algorithms.
+ 
++config CRYPTO_DEV_ZYNQMP_AES
++	tristate "Support for Xilinx ZynqMP AES hw accelerator"
++	depends on ARCH_ZYNQMP || COMPILE_TEST
++	select CRYPTO_AES
++	select CRYPTO_BLKCIPHER
++	help
++	  Xilinx processors have AES-GCM engine used for symmetric key
++	  encryption and decryption. This driver interfaces with AES hw
++	  accelerator. Select this if you want to use the ZynqMP module
++	  for AES algorithms.
++
+ config CRYPTO_DEV_MEDIATEK
+ 	tristate "MediaTek's EIP97 Cryptographic Engine driver"
+ 	depends on HAS_DMA
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
+index 1d5ed41f4db4..26f0e9fd86bb 100644
+--- a/drivers/crypto/Makefile
++++ b/drivers/crypto/Makefile
+@@ -48,3 +48,4 @@ obj-$(CONFIG_CRYPTO_DEV_SAFEXCEL) += inside-secure/
+ obj-$(CONFIG_CRYPTO_DEV_ARTPEC6) += axis/
+ obj-$(CONFIG_CRYPTO_DEV_ZYNQMP_SHA3) += zynqmp-sha.o
+ obj-$(CONFIG_CRYPTO_DEV_XILINX_RSA) += zynqmp-rsa.o
++obj-$(CONFIG_CRYPTO_DEV_ZYNQMP_AES) += zynqmp-aes.o
+diff --git a/drivers/crypto/zynqmp-aes.c b/drivers/crypto/zynqmp-aes.c
+new file mode 100644
+index 000000000000..7dab323ed0a2
+--- /dev/null
++++ b/drivers/crypto/zynqmp-aes.c
+@@ -0,0 +1,331 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Xilinx ZynqMP AES Driver.
++ * Copyright (c) 2018 Xilinx Inc.
++ */
++
++#include <crypto/aes.h>
++#include <crypto/scatterwalk.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of_device.h>
++#include <linux/scatterlist.h>
++#include <linux/spinlock.h>
++#include <linux/firmware/xilinx/zynqmp/firmware.h>
++
++#define ZYNQMP_AES_QUEUE_LENGTH			1
++#define ZYNQMP_AES_IV_SIZE			12
++#define ZYNQMP_AES_GCM_SIZE			16
++#define ZYNQMP_AES_KEY_SIZE			32
++
++#define ZYNQMP_AES_DECRYPT			0
++#define ZYNQMP_AES_ENCRYPT			1
++
++#define ZYNQMP_AES_KUP_KEY			0
++
++#define ZYNQMP_AES_GCM_TAG_MISMATCH_ERR		0x01
++#define ZYNQMP_AES_SIZE_ERR			0x06
++#define ZYNQMP_AES_WRONG_KEY_SRC_ERR		0x13
++#define ZYNQMP_AES_PUF_NOT_PROGRAMMED		0xE300
++
++#define ZYNQMP_AES_BLOCKSIZE			0x04
++
++struct zynqmp_aes_dev {
++	struct list_head list;
++	struct device *dev;
++	/* the lock protects queue and dev list */
++	spinlock_t lock;
++	struct crypto_queue queue;
++};
++
++struct zynqmp_aes_op {
++	struct zynqmp_aes_dev *dd;
++	void *src;
++	void *dst;
++	int len;
++	u8 key[ZYNQMP_AES_KEY_SIZE];
++	u8 *iv;
++	u32 keylen;
++	u32 keytype;
++};
++
++struct zynqmp_aes_data {
++	u64 src;
++	u64 iv;
++	u64 key;
++	u64 dst;
++	u64 size;
++	u64 optype;
++	u64 keysrc;
++};
++
++struct zynqmp_aes_drv {
++	struct list_head dev_list;
++	/* the lock protects dev list */
++	spinlock_t lock;
++};
++
++static struct zynqmp_aes_drv zynqmp_aes = {
++	.dev_list = LIST_HEAD_INIT(zynqmp_aes.dev_list),
++	.lock = __SPIN_LOCK_UNLOCKED(zynqmp_aes.lock),
++};
++
++static struct zynqmp_aes_dev *zynqmp_aes_find_dev(struct zynqmp_aes_op *ctx)
++{
++	struct zynqmp_aes_dev *aes_dd = NULL;
++	struct zynqmp_aes_dev *tmp;
++
++	spin_lock_bh(&zynqmp_aes.lock);
++	if (!ctx->dd) {
++		list_for_each_entry(tmp, &zynqmp_aes.dev_list, list) {
++			aes_dd = tmp;
++			break;
++		}
++		ctx->dd = aes_dd;
++	} else {
++		aes_dd = ctx->dd;
++	}
++	spin_unlock_bh(&zynqmp_aes.lock);
++
++	return aes_dd;
++}
++
++static int zynqmp_setkey_blk(struct crypto_tfm *tfm, const u8 *key,
++			     unsigned int len)
++{
++	struct zynqmp_aes_op *op = crypto_tfm_ctx(tfm);
++
++	op->keylen = len;
++	memcpy(op->key, key, len);
++
++	return 0;
++}
++
++static int zynqmp_setkeytype(struct crypto_tfm *tfm, const u8 *keytype,
++			     unsigned int len)
++{
++	struct zynqmp_aes_op *op = crypto_tfm_ctx(tfm);
++
++	op->keytype = (u32)(*keytype);
++
++	return 0;
++}
++
++static int zynqmp_aes_xcrypt(struct blkcipher_desc *desc,
++			     struct scatterlist *dst,
++			     struct scatterlist *src,
++			     unsigned int nbytes,
++			     unsigned int flags)
++{
++	struct zynqmp_aes_op *op = crypto_blkcipher_ctx(desc->tfm);
++	struct zynqmp_aes_dev *dd = zynqmp_aes_find_dev(op);
++	const struct zynqmp_eemi_ops *eemi_ops = zynqmp_pm_get_eemi_ops();
++	int err, ret, copy_bytes, src_data = 0, dst_data = 0;
++	dma_addr_t dma_addr, dma_addr_buf;
++	struct zynqmp_aes_data *abuf;
++	struct blkcipher_walk walk;
++	unsigned int data_size;
++	size_t dma_size;
++	char *kbuf;
++
++	if (!eemi_ops || !eemi_ops->aes)
++		return -ENOTSUPP;
++
++	if (op->keytype == ZYNQMP_AES_KUP_KEY)
++		dma_size = nbytes + ZYNQMP_AES_KEY_SIZE
++			+ ZYNQMP_AES_IV_SIZE;
++	else
++		dma_size = nbytes + ZYNQMP_AES_IV_SIZE;
++
++	kbuf = dma_alloc_coherent(dd->dev, dma_size, &dma_addr, GFP_KERNEL);
++	if (!kbuf)
++		return -ENOMEM;
++
++	abuf = dma_alloc_coherent(dd->dev, sizeof(struct zynqmp_aes_data),
++				  &dma_addr_buf, GFP_KERNEL);
++	if (!abuf) {
++		dma_free_coherent(dd->dev, dma_size, kbuf, dma_addr);
++		return -ENOMEM;
++	}
++
++	data_size = nbytes;
++	blkcipher_walk_init(&walk, dst, src, data_size);
++	err = blkcipher_walk_virt(desc, &walk);
++	op->iv = walk.iv;
++
++	while ((nbytes = walk.nbytes)) {
++		op->src = walk.src.virt.addr;
++		memcpy(kbuf + src_data, op->src, nbytes);
++		src_data = src_data + nbytes;
++		nbytes &= (ZYNQMP_AES_BLOCKSIZE - 1);
++		err = blkcipher_walk_done(desc, &walk, nbytes);
++	}
++	memcpy(kbuf + data_size, op->iv, ZYNQMP_AES_IV_SIZE);
++	abuf->src = dma_addr;
++	abuf->dst = dma_addr;
++	abuf->iv = abuf->src + data_size;
++	abuf->size = data_size - ZYNQMP_AES_GCM_SIZE;
++	abuf->optype = flags;
++	abuf->keysrc = op->keytype;
++
++	if (op->keytype == ZYNQMP_AES_KUP_KEY) {
++		memcpy(kbuf + data_size + ZYNQMP_AES_IV_SIZE,
++		       op->key, ZYNQMP_AES_KEY_SIZE);
++
++		abuf->key = abuf->src + data_size + ZYNQMP_AES_IV_SIZE;
++	} else {
++		abuf->key = 0;
++	}
++	eemi_ops->aes(dma_addr_buf, &ret);
++
++	if (ret != 0) {
++		switch (ret) {
++		case ZYNQMP_AES_GCM_TAG_MISMATCH_ERR:
++			dev_err(dd->dev, "ERROR: Gcm Tag mismatch\n\r");
++			break;
++		case ZYNQMP_AES_SIZE_ERR:
++			dev_err(dd->dev, "ERROR : Non word aligned data\n\r");
++			break;
++		case ZYNQMP_AES_WRONG_KEY_SRC_ERR:
++			dev_err(dd->dev, "ERROR: Wrong KeySrc, enable secure mode\n\r");
++			break;
++		case ZYNQMP_AES_PUF_NOT_PROGRAMMED:
++			dev_err(dd->dev, "ERROR: PUF is not registered\r\n");
++			break;
++		default:
++			dev_err(dd->dev, "ERROR: Invalid");
++			break;
++		}
++		goto END;
++	}
++	if (flags)
++		copy_bytes = data_size;
++	else
++		copy_bytes = data_size - ZYNQMP_AES_GCM_SIZE;
++
++	blkcipher_walk_init(&walk, dst, src, copy_bytes);
++	err = blkcipher_walk_virt(desc, &walk);
++
++	while ((nbytes = walk.nbytes)) {
++		memcpy(walk.dst.virt.addr, kbuf + dst_data, nbytes);
++		dst_data = dst_data + nbytes;
++		nbytes &= (ZYNQMP_AES_BLOCKSIZE - 1);
++		err = blkcipher_walk_done(desc, &walk, nbytes);
++	}
++END:
++	dma_free_coherent(dd->dev, dma_size, kbuf, dma_addr);
++	dma_free_coherent(dd->dev, sizeof(struct zynqmp_aes_data),
++			  abuf, dma_addr_buf);
++	return err;
++}
++
++static int zynqmp_aes_decrypt(struct blkcipher_desc *desc,
++			      struct scatterlist *dst,
++			      struct scatterlist *src,
++			      unsigned int nbytes)
++{
++	return zynqmp_aes_xcrypt(desc, dst, src, nbytes, ZYNQMP_AES_DECRYPT);
++}
++
++static int zynqmp_aes_encrypt(struct blkcipher_desc *desc,
++			      struct scatterlist *dst,
++			      struct scatterlist *src,
++			      unsigned int nbytes)
++{
++	return zynqmp_aes_xcrypt(desc, dst, src, nbytes, ZYNQMP_AES_ENCRYPT);
++}
++
++static struct crypto_alg zynqmp_alg = {
++	.cra_name		=	"xilinx-zynqmp-aes",
++	.cra_driver_name	=	"zynqmp-aes",
++	.cra_priority		=	400,
++	.cra_flags		=	CRYPTO_ALG_TYPE_BLKCIPHER |
++					CRYPTO_ALG_KERN_DRIVER_ONLY,
++	.cra_blocksize		=	ZYNQMP_AES_BLOCKSIZE,
++	.cra_ctxsize		=	sizeof(struct zynqmp_aes_op),
++	.cra_alignmask		=	15,
++	.cra_type		=	&crypto_blkcipher_type,
++	.cra_module		=	THIS_MODULE,
++	.cra_u			=	{
++	.blkcipher	=	{
++			.min_keysize	=	0,
++			.max_keysize	=	ZYNQMP_AES_KEY_SIZE,
++			.setkey		=	zynqmp_setkey_blk,
++			.setkeytype	=	zynqmp_setkeytype,
++			.encrypt	=	zynqmp_aes_encrypt,
++			.decrypt	=	zynqmp_aes_decrypt,
++			.ivsize		=	ZYNQMP_AES_IV_SIZE,
++		}
++	}
++};
++
++static const struct of_device_id zynqmp_aes_dt_ids[] = {
++	{ .compatible = "xlnx,zynqmp-aes" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, zynqmp_aes_dt_ids);
++
++static int zynqmp_aes_probe(struct platform_device *pdev)
++{
++	struct zynqmp_aes_dev *aes_dd;
++	struct device *dev = &pdev->dev;
++	int ret;
++
++	aes_dd = devm_kzalloc(dev, sizeof(*aes_dd), GFP_KERNEL);
++	if (!aes_dd)
++		return -ENOMEM;
++
++	aes_dd->dev = dev;
++	platform_set_drvdata(pdev, aes_dd);
++
++	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(44));
++	if (ret < 0) {
++		dev_err(dev, "no usable DMA configuration");
++		return ret;
++	}
++
++	INIT_LIST_HEAD(&aes_dd->list);
++	crypto_init_queue(&aes_dd->queue, ZYNQMP_AES_QUEUE_LENGTH);
++	list_add_tail(&aes_dd->list, &zynqmp_aes.dev_list);
++
++	ret = crypto_register_alg(&zynqmp_alg);
++	if (ret)
++		goto err_algs;
++
++	dev_info(dev, "AES Successfully Registered\n\r");
++	return 0;
++
++err_algs:
++	list_del(&aes_dd->list);
++	dev_err(dev, "initialization failed.\n");
++
++	return ret;
++}
++
++static int zynqmp_aes_remove(struct platform_device *pdev)
++{
++	struct zynqmp_aes_dev *aes_dd;
++
++	aes_dd = platform_get_drvdata(pdev);
++	if (!aes_dd)
++		return -ENODEV;
++	list_del(&aes_dd->list);
++	crypto_unregister_alg(&zynqmp_alg);
++	return 0;
++}
++
++static struct platform_driver xilinx_aes_driver = {
++	.probe = zynqmp_aes_probe,
++	.remove = zynqmp_aes_remove,
++	.driver = {
++		.name = "zynqmp_aes",
++		.of_match_table = of_match_ptr(zynqmp_aes_dt_ids),
++	},
++};
++
++module_platform_driver(xilinx_aes_driver);
++
++MODULE_DESCRIPTION("Xilinx ZynqMP AES hw acceleration support.");
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Nava kishore Manne <nava.manne@xilinx.com>");
++MODULE_AUTHOR("Kalyani Akula <kalyani.akula@xilinx.com>");
+diff --git a/drivers/firmware/xilinx/zynqmp/firmware.c b/drivers/firmware/xilinx/zynqmp/firmware.c
+index e4b3f858c423..dfbbe8c6442d 100644
+--- a/drivers/firmware/xilinx/zynqmp/firmware.c
++++ b/drivers/firmware/xilinx/zynqmp/firmware.c
+@@ -21,6 +21,8 @@
+ #include <linux/firmware/xilinx/zynqmp/firmware.h>
+ #include <linux/firmware/xilinx/zynqmp/firmware-debug.h>
+ 
++static unsigned long register_address;
++
+ /**
+  * zynqmp_pm_ret_code - Convert PMU-FW error codes to Linux error codes
+  * @ret_status:		PMUFW return code
+@@ -308,9 +310,9 @@ static int zynqmp_pm_reset_get_status(const enum zynqmp_pm_reset reset,
+  * @address:	Address to write to
+  * @size:	pl bitstream size
+  * @flags:
+- *	BIT(0) - Bit-stream type.
+- *		 0 - Full Bit-stream.
+- *		 1 - Partial Bit-stream.
++ *	BIT(0) - Bitstream type.
++ *		 0 - Full Bitstream.
++ *		 1 - Partial Bitstream.
+  *	BIT(1) - Authentication.
+  *		 1 - Enable.
+  *		 0 - Disable.
+@@ -355,6 +357,36 @@ static int zynqmp_pm_fpga_get_status(u32 *value)
+ 	return ret;
+ }
+ 
++/**
++ * zynqmp_pm_fpga_read - Perform the fpga configuration readback
++ * @reg_numframes: Configuration register offset (or) Number of frames to read
++ * @phys_address: Physical Address of the buffer
++ * @readback_type: Type of fpga readback operation
++ * @value: Value to read
++ *
++ * This function provides access to xilfpga library to perform
++ * fpga configuration readback.
++ *
++ * Return:	Returns status, either success or error+reason
++ */
++static int zynqmp_pm_fpga_read(const u32 reg_numframes, const u64 phys_address,
++			       u32 readback_type, u32 *value)
++{
++	u32 ret_payload[PAYLOAD_ARG_CNT];
++	int ret;
++
++	if (!value)
++		return -EINVAL;
++
++	ret = zynqmp_pm_invoke_fn(PM_FPGA_READ, reg_numframes,
++				  lower_32_bits(phys_address),
++				  upper_32_bits(phys_address), readback_type,
++				  ret_payload);
++	*value = ret_payload[1];
++
++	return ret;
++}
++
+ /**
+  * zynqmp_pm_request_suspend - PM call to request for another PU or subsystem to
+  *					be suspended gracefully.
+@@ -646,6 +678,29 @@ static int zynqmp_pm_rsa(const u64 address, const u32 size, const u32 flags)
+ 				   size, flags, NULL);
+ }
+ 
++/**
++ * zynqmp_pm_aes - Access AES hardware to encrypt/decrypt the data using
++ * AES-GCM core.
++ * @address:	Address of the AesParams structure.
++ * @out:	Returned output value
++ *
++ * Return:	Returns status, either success or error code.
++ */
++static int zynqmp_pm_aes_engine(const u64 address, u32 *out)
++{
++	u32 ret_payload[PAYLOAD_ARG_CNT];
++	int ret;
++
++	if (!out)
++		return -EINVAL;
++
++	ret = zynqmp_pm_invoke_fn(PM_SECURE_AES, upper_32_bits(address),
++				  lower_32_bits(address),
++				  0, 0, ret_payload);
++	*out = ret_payload[1];
++	return ret;
++}
++
+ /**
+  * zynqmp_pm_pinctrl_request - Request Pin from firmware
+  * @pin:	Pin number to request
+@@ -773,6 +828,26 @@ static int zynqmp_pm_ioctl(u32 node_id, u32 ioctl_id, u32 arg1, u32 arg2,
+ 				   arg1, arg2, out);
+ }
+ 
++/**
++ * zynqmp_pm_config_reg_access - PM Config API for Config register access
++ * @register_access_id:	ID of the requested REGISTER_ACCESS
++ * @address:		Address of the register to be accessed
++ * @mask:		Mask to be written to the register
++ * @value:		Value to be written to the register
++ * @out:		Returned output value
++ *
++ * This function calls REGISTER_ACCESS to configure CSU/PMU registers.
++ *
++ * Return:	Returns status, either success or error+reason
++ */
++
++static int zynqmp_pm_config_reg_access(u32 register_access_id, u32 address,
++				       u32 mask, u32 value, u32 *out)
++{
++	return zynqmp_pm_invoke_fn(PM_REGISTER_ACCESS, register_access_id,
++				   address, mask, value, out);
++}
++
+ static int zynqmp_pm_query_data(struct zynqmp_pm_query_data qdata, u32 *out)
+ {
+ 	return zynqmp_pm_invoke_fn(PM_QUERY_DATA, qdata.qid, qdata.arg1,
+@@ -943,6 +1018,28 @@ static int zynqmp_pm_clock_getparent(u32 clock_id, u32 *parent_id)
+ 	return ret;
+ }
+ 
++/**
++ * zynqmp_pm_efuse_access - Provides access to efuse memory.
++ * @address:	Address of the efuse params structure
++ * @out:		Returned output value
++ *
++ * Return:	Returns status, either success or error code.
++ */
++static int zynqmp_pm_efuse_access(const u64 address, u32 *out)
++{
++	u32 ret_payload[PAYLOAD_ARG_CNT];
++	int ret;
++
++	if (!out)
++		return -EINVAL;
++
++	ret = zynqmp_pm_invoke_fn(PM_EFUSE_ACCESS, upper_32_bits(address),
++				  lower_32_bits(address), 0, 0, ret_payload);
++	*out = ret_payload[1];
++
++	return ret;
++}
++
+ static const struct zynqmp_eemi_ops eemi_ops = {
+ 	.get_api_version = zynqmp_pm_get_api_version,
+ 	.get_chipid = zynqmp_pm_get_chipid,
+@@ -950,6 +1047,7 @@ static const struct zynqmp_eemi_ops eemi_ops = {
+ 	.reset_get_status = zynqmp_pm_reset_get_status,
+ 	.fpga_load = zynqmp_pm_fpga_load,
+ 	.fpga_get_status = zynqmp_pm_fpga_get_status,
++	.fpga_read = zynqmp_pm_fpga_read,
+ 	.sha_hash = zynqmp_pm_sha_hash,
+ 	.rsa = zynqmp_pm_rsa,
+ 	.request_suspend = zynqmp_pm_request_suspend,
+@@ -983,6 +1081,9 @@ static const struct zynqmp_eemi_ops eemi_ops = {
+ 	.clock_getrate = zynqmp_pm_clock_getrate,
+ 	.clock_setparent = zynqmp_pm_clock_setparent,
+ 	.clock_getparent = zynqmp_pm_clock_getparent,
++	.register_access = zynqmp_pm_config_reg_access,
++	.aes = zynqmp_pm_aes_engine,
++	.efuse_access = zynqmp_pm_efuse_access,
+ };
+ 
+ /**
+@@ -1175,9 +1276,135 @@ static ssize_t health_status_store(struct kobject *kobj,
+ 
+ static struct kobj_attribute zynqmp_attr_health_status =
+ 						__ATTR_WO(health_status);
++
++/**
++ * config_reg_store - Write config_reg sysfs attribute
++ * @kobj:	Kobject structure
++ * @attr:	Kobject attribute structure
++ * @buf:	User entered health_status attribute string
++ * @count:	Buffer size
++ *
++ * User-space interface for setting the config register.
++ *
++ * To write any CSU/PMU register
++ * echo <address> <mask> <values> > /sys/firmware/zynqmp/config_reg
++ * Usage:
++ * echo 0x345AB234 0xFFFFFFFF 0x1234ABCD > /sys/firmware/zynqmp/config_reg
++ *
++ * To Read any CSU/PMU register, write address to the variable like below
++ * echo <address> > /sys/firmware/zynqmp/config_reg
++ *
++ * Return:	count argument if request succeeds, the corresponding error
++ *		code otherwise
++ */
++static ssize_t config_reg_store(struct kobject *kobj,
++				struct kobj_attribute *attr,
++				const char *buf, size_t count)
++{
++	char *kern_buff, *inbuf, *tok;
++	unsigned long address, value, mask;
++	int ret;
++
++	kern_buff = kzalloc(count, GFP_KERNEL);
++	if (!kern_buff)
++		return -ENOMEM;
++
++	ret = strlcpy(kern_buff, buf, count);
++	if (ret < 0) {
++		ret = -EFAULT;
++		goto err;
++	}
++
++	inbuf = kern_buff;
++
++	/* Read the addess */
++	tok = strsep(&inbuf, " ");
++	if (!tok) {
++		ret = -EFAULT;
++		goto err;
++	}
++	ret = kstrtol(tok, 16, &address);
++	if (ret) {
++		ret = -EFAULT;
++		goto err;
++	}
++	/* Read the write value */
++	tok = strsep(&inbuf, " ");
++	/*
++	 * If parameter provided is only address, then its a read operation.
++	 * Store the address in a global variable and retrieve whenever
++	 * required.
++	 */
++	if (!tok) {
++		register_address = address;
++		goto err;
++	}
++	register_address = address;
++
++	ret = kstrtol(tok, 16, &mask);
++	if (ret) {
++		ret = -EFAULT;
++		goto err;
++	}
++	tok = strsep(&inbuf, " ");
++	if (!tok) {
++		ret = -EFAULT;
++		goto err;
++	}
++	ret = kstrtol(tok, 16, &value);
++	if (!tok) {
++		ret = -EFAULT;
++		goto err;
++	}
++	ret = zynqmp_pm_config_reg_access(CONFIG_REG_WRITE, address,
++					  mask, value, NULL);
++	if (ret)
++		pr_err("unable to write value to %lx\n", value);
++err:
++	kfree(kern_buff);
++	if (ret)
++		return ret;
++	return count;
++}
++
++/**
++ * config_reg_show - Read config_reg sysfs attribute
++ * @kobj:	Kobject structure
++ * @attr:	Kobject attribute structure
++ * @buf:	User entered health_status attribute string
++ *
++ * User-space interface for getting the config register.
++ *
++ * To Read any CSU/PMU register, write address to the variable like below
++ * echo <address> > /sys/firmware/zynqmp/config_reg
++ *
++ * Then Read the address using below command
++ * cat /sys/firmware/zynqmp/config_reg
++ *
++ * Return: number of chars written to buf.
++ */
++static ssize_t config_reg_show(struct kobject *kobj,
++			       struct kobj_attribute *attr,
++			       char *buf)
++{
++	int ret;
++	u32 ret_payload[PAYLOAD_ARG_CNT];
++
++	ret = zynqmp_pm_config_reg_access(CONFIG_REG_READ, register_address,
++					  0, 0, ret_payload);
++	if (ret)
++		return ret;
++
++	return sprintf(buf, "0x%x\n", ret_payload[1]);
++}
++
++static struct kobj_attribute zynqmp_attr_config_reg =
++					__ATTR_RW(config_reg);
++
+ static struct attribute *attrs[] = {
+ 	&zynqmp_attr_shutdown_scope.attr,
+ 	&zynqmp_attr_health_status.attr,
++	&zynqmp_attr_config_reg.attr,
+ 	NULL,
+ };
+ 
+diff --git a/include/crypto/if_alg.h b/include/crypto/if_alg.h
+index 75ec9c662268..3c788ab68991 100644
+--- a/include/crypto/if_alg.h
++++ b/include/crypto/if_alg.h
+@@ -55,6 +55,8 @@ struct af_alg_type {
+ 	void *(*bind)(const char *name, u32 type, u32 mask);
+ 	void (*release)(void *private);
+ 	int (*setkey)(void *private, const u8 *key, unsigned int keylen);
++	int (*setkeytype)(void *private, const u8 *keytype,
++			  unsigned int keylen);
+ 	int (*accept)(void *private, struct sock *sk);
+ 	int (*accept_nokey)(void *private, struct sock *sk);
+ 	int (*setauthsize)(void *private, unsigned int authsize);
+diff --git a/include/crypto/skcipher.h b/include/crypto/skcipher.h
+index 562001cb412b..d994354382bb 100644
+--- a/include/crypto/skcipher.h
++++ b/include/crypto/skcipher.h
+@@ -54,7 +54,9 @@ struct skcipher_givcrypt_request {
+ 
+ struct crypto_skcipher {
+ 	int (*setkey)(struct crypto_skcipher *tfm, const u8 *key,
+-	              unsigned int keylen);
++			unsigned int keylen);
++	int (*setkeytype)(struct crypto_skcipher *tfm, const u8 *key,
++			  unsigned int keylen);
+ 	int (*encrypt)(struct skcipher_request *req);
+ 	int (*decrypt)(struct skcipher_request *req);
+ 
+@@ -125,6 +127,8 @@ struct crypto_skcipher {
+ struct skcipher_alg {
+ 	int (*setkey)(struct crypto_skcipher *tfm, const u8 *key,
+ 	              unsigned int keylen);
++	int (*setkeytype)(struct crypto_skcipher *tfm, const u8 *key,
++			  unsigned int keylen);
+ 	int (*encrypt)(struct skcipher_request *req);
+ 	int (*decrypt)(struct skcipher_request *req);
+ 	int (*init)(struct crypto_skcipher *tfm);
+@@ -401,6 +405,12 @@ static inline int crypto_skcipher_setkey(struct crypto_skcipher *tfm,
+ 	return tfm->setkey(tfm, key, keylen);
+ }
+ 
++static inline int crypto_skcipher_setkeytype(struct crypto_skcipher *tfm,
++					     const u8 *key, unsigned int keylen)
++{
++	return tfm->setkeytype(tfm, key, keylen);
++}
++
+ static inline bool crypto_skcipher_has_setkey(struct crypto_skcipher *tfm)
+ {
+ 	return tfm->keysize;
+diff --git a/include/linux/crypto.h b/include/linux/crypto.h
+index 84da9978e951..94ef221993ff 100644
+--- a/include/linux/crypto.h
++++ b/include/linux/crypto.h
+@@ -278,6 +278,8 @@ struct ablkcipher_alg {
+ struct blkcipher_alg {
+ 	int (*setkey)(struct crypto_tfm *tfm, const u8 *key,
+ 	              unsigned int keylen);
++	int (*setkeytype)(struct crypto_tfm *tfm, const u8 *keytype,
++			  unsigned int keylen);
+ 	int (*encrypt)(struct blkcipher_desc *desc,
+ 		       struct scatterlist *dst, struct scatterlist *src,
+ 		       unsigned int nbytes);
+@@ -502,6 +504,8 @@ struct blkcipher_tfm {
+ 	void *iv;
+ 	int (*setkey)(struct crypto_tfm *tfm, const u8 *key,
+ 		      unsigned int keylen);
++	int (*setkeytype)(struct crypto_tfm *tfm, const u8 *key,
++			  unsigned int keylen);
+ 	int (*encrypt)(struct blkcipher_desc *desc, struct scatterlist *dst,
+ 		       struct scatterlist *src, unsigned int nbytes);
+ 	int (*decrypt)(struct blkcipher_desc *desc, struct scatterlist *dst,
+@@ -1220,6 +1224,14 @@ static inline int crypto_blkcipher_setkey(struct crypto_blkcipher *tfm,
+ 						 key, keylen);
+ }
+ 
++static inline int crypto_blkcipher_setkeytype(struct crypto_blkcipher *tfm,
++					      const u8 *key,
++					      unsigned int keylen)
++{
++	return crypto_blkcipher_crt(tfm)->setkeytype(crypto_blkcipher_tfm(tfm),
++						     key, keylen);
++}
++
+ /**
+  * crypto_blkcipher_encrypt() - encrypt plaintext
+  * @desc: reference to the block cipher handle with meta data
+diff --git a/include/linux/firmware/xilinx/zynqmp/firmware.h b/include/linux/firmware/xilinx/zynqmp/firmware.h
+index b329ad0d8699..ba048ad7b5a5 100644
+--- a/include/linux/firmware/xilinx/zynqmp/firmware.h
++++ b/include/linux/firmware/xilinx/zynqmp/firmware.h
+@@ -126,6 +126,11 @@ enum pm_api_id {
+ 	PM_CLOCK_GETRATE,
+ 	PM_CLOCK_SETPARENT,
+ 	PM_CLOCK_GETPARENT,
++	PM_FPGA_READ = 46,
++	PM_SECURE_AES,
++	/* PM_REGISTER_ACCESS API */
++	PM_REGISTER_ACCESS = 52,
++	PM_EFUSE_ACCESS,
+ };
+ 
+ /* PMU-FW return status codes */
+@@ -525,6 +530,11 @@ enum pm_query_id {
+ 	PM_QID_PINCTRL_GET_PIN_GROUPS,
+ };
+ 
++enum pm_register_access_id {
++	CONFIG_REG_WRITE,
++	CONFIG_REG_READ,
++};
++
+ struct zynqmp_pm_query_data {
+ 	u32 qid;
+ 	u32 arg1;
+@@ -540,6 +550,8 @@ struct zynqmp_eemi_ops {
+ 	int (*reset_get_status)(const enum zynqmp_pm_reset reset, u32 *status);
+ 	int (*fpga_load)(const u64 address, const u32 size, const u32 flags);
+ 	int (*fpga_get_status)(u32 *value);
++	int (*fpga_read)(const u32 reg_numframes, const u64 phys_address,
++			 u32 readback_type, u32 *value);
+ 	int (*sha_hash)(const u64 address, const u32 size, const u32 flags);
+ 	int (*rsa)(const u64 address, const u32 size, const u32 flags);
+ 	int (*request_suspend)(const u32 node,
+@@ -591,6 +603,10 @@ struct zynqmp_eemi_ops {
+ 	int (*clock_getrate)(u32 clock_id, u64 *rate);
+ 	int (*clock_setparent)(u32 clock_id, u32 parent_id);
+ 	int (*clock_getparent)(u32 clock_id, u32 *parent_id);
++	int (*register_access)(u32 register_access_id, u32 address,
++			       u32 mask, u32 value, u32 *out);
++	int (*aes)(const u64 address, u32 *out);
++	int (*efuse_access)(const u64 address, u32 *out);
+ };
+ 
+ /*
+diff --git a/include/uapi/linux/if_alg.h b/include/uapi/linux/if_alg.h
+index bc2bcdec377b..aa31b18ebf0a 100644
+--- a/include/uapi/linux/if_alg.h
++++ b/include/uapi/linux/if_alg.h
+@@ -35,6 +35,7 @@ struct af_alg_iv {
+ #define ALG_SET_OP			3
+ #define ALG_SET_AEAD_ASSOCLEN		4
+ #define ALG_SET_AEAD_AUTHSIZE		5
++#define ALG_SET_KEY_TYPE		6
+ 
+ /* Operations */
+ #define ALG_OP_DECRYPT			0
+-- 
+2.17.1
+
