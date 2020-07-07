@@ -57,16 +57,16 @@ fi
 
 echo "HOSTNAME: $TARGET_HOSTNAME"
 
-if [ -f "${SRCDIR}/${image}-image-${MACHINE}.tar.xz" ]; then
-    rootfs=${SRCDIR}/${image}-image-${MACHINE}.tar.xz
-elif [ -f "${SRCDIR}/${image}-${MACHINE}.tar.xz" ]; then
-    rootfs=${SRCDIR}/${image}-${MACHINE}.tar.xz
+if [ -f "${SRCDIR}/${image}-image-${MACHINE}.tar.gz" ]; then
+    rootfs=${SRCDIR}/${image}-image-${MACHINE}.tar.gz
+elif [ -f "${SRCDIR}/${image}-${MACHINE}.tar.gz" ]; then
+    rootfs=${SRCDIR}/${image}-${MACHINE}.tar.gz
 elif [ -f "${SRCDIR}/${image}" ]; then
     rootfs=${SRCDIR}/${image}
 else
     echo "Rootfs file not found. Tried"
-    echo " ${SRCDIR}/${image}-image-${MACHINE}.tar.xz"
-    echo " ${SRCDIR}/${image}-${MACHINE}.tar.xz"
+    echo " ${SRCDIR}/${image}-image-${MACHINE}.tar.gz"
+    echo " ${SRCDIR}/${image}-${MACHINE}.tar.gz"
     echo " ${SRCDIR}/${image}"
     exit 1
 fi
@@ -89,7 +89,7 @@ echo "Mounting $DEV"
 sudo mount $DEV /media/card
 
 echo "Extracting ${rootfs} /media/card"
-sudo tar -C /media/card -xJf ${rootfs}
+sudo tar -C /media/card -xzf ${rootfs}
 
 if [ -f ${SRCDIR}/zynqmp-zcu102-rev1.0.dtb ]; then
     if [ -f /media/card/boot/zynqmp-zcu102-rev1.0.dtb ]; then

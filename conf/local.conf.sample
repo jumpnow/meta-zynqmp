@@ -20,7 +20,7 @@ PREFERRED_PROVIDER_jpeg = "libjpeg-turbo"
 PREFERRED_PROVIDER_udev = "eudev"
 VIRTUAL-RUNTIME_init_manager = "sysvinit"
 
-IMAGE_FSTYPES = "tar.xz"
+IMAGE_FSTYPES = "tar.gz"
 
 # DL_DIR = "/src/oe"
 
