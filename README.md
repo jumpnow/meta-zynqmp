@@ -43,9 +43,9 @@ Requires:
 
 Latest commits:
 
-    poky ca9dd4b8ea
-    meta-openembedded 9e60d3066
-    meta-security ecd8c30
+    poky d6c3a4db81
+    meta-openembedded 2b5dd1eb8
+    meta-security 440c37f
     meta-xilinx b82343a
     meta-jumpnow 1c39af3
 
