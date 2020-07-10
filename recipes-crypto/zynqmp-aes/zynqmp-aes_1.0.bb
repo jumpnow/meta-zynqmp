@@ -2,7 +2,7 @@ SUMMARY = "Utilities to work with the zynqmp-aes driver"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
 
-SRCREV = "7b74d4f2c8f414cff9e8b94d32add47452be3daf"
+SRCREV = "61a54ac7ce15a8dcbf69aac4aa1055a024b9a1fd"
 SRC_URI = "git://github.com/scottellis/zynqmp-aes.git"
 
 S = "${WORKDIR}/git"
@@ -18,4 +18,5 @@ do_install() {
     install -m 755 tests/*.sh ${D}${datadir}/zynqmp-aes
 }
 
-FILES_${PN} = "${bindir} ${datadir}"
+FILES_${PN} = "${bindir}"
+FILES_${PN}-dev = "${datadir}"
