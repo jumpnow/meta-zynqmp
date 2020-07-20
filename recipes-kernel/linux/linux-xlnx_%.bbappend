@@ -18,6 +18,7 @@ SRC_URI += "\
 #LIC_FILES_CHKSUM = "file://COPYING;md5=d7810fab7487fb0aad327b76f1be7cd7"
 #LINUX_VERSION = "4.14"
 #KBRANCH = "xlnx_rebase_v4.14"
+
 # this is the v2018.3 rev
 #SRCREV = "eeab73d1207d6fc2082776c954eb19fd7290bfbe"
 # this is the v2018.2 rev
