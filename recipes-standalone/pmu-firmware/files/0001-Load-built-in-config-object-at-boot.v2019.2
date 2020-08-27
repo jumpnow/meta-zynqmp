@@ -1,6 +1,6 @@
-From c05b12a8d3f02ba247d37d7a07032fdfb7681b7b Mon Sep 17 00:00:00 2001
+From 3b4ebd4cff2001a11042ba70400a2c207a7afd64 Mon Sep 17 00:00:00 2001
 From: Scott Ellis <scott@jumpnowtek.com>
-Date: Wed, 26 Aug 2020 18:16:08 +0000
+Date: Fri, 13 Mar 2020 13:52:13 -0400
 Subject: [PATCH] Load built-in config object at boot
 
 ---
@@ -8,10 +8,10 @@ Subject: [PATCH] Load built-in config object at boot
  1 file changed, 5 insertions(+)
 
 diff --git a/lib/sw_apps/zynqmp_pmufw/src/pm_binding.c b/lib/sw_apps/zynqmp_pmufw/src/pm_binding.c
-index 1d42e04c83..4686e74d02 100644
+index 811ff01e7..249cf6d1c 100644
 --- a/pm_binding.c
 +++ b/pm_binding.c
-@@ -23,6 +23,10 @@
+@@ -41,6 +41,10 @@
  #include "pm_extern.h"
  #include "pm_usb.h"
  #include "pm_hooks.h"
@@ -22,7 +22,7 @@ index 1d42e04c83..4686e74d02 100644
  
  /* All GIC wakes in GPI1 */
  #define PMU_IOMODULE_GPI1_GIC_WAKES_ALL_MASK \
-@@ -62,6 +66,7 @@ void XPfw_PmInit(void)
+@@ -80,6 +84,7 @@ void XPfw_PmInit(void)
  	if (bootType == PM_COLD_BOOT) {
  		PmMasterDefaultConfig();
  		PmNodeConstruct();

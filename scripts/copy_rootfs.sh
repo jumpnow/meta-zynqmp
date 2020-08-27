@@ -1,7 +1,30 @@
 #!/bin/bash
 
 if [ -z ${MACHINE} ]; then
-    MACHINE="zcu102-zynqmp"
+    # try to find it
+    if [ -f ../../build/conf/local.conf ]; then
+        MACHINE=$(grep '^MACHINE' ../../build/conf/local.conf | grep -v MACHINE_ | awk '{ print $3 }' | sed 's/"//g')
+    fi
+
+    if [ -z "${MACHINE}" ]; then
+        echo "Environment variable MACHINE not set"
+        echo "Example: export MACHINE=zcu102-zynqmp|ultra96-zynqmp"
+        exit 1
+    fi
+fi
+
+if [ ${MACHINE} == "zcu102-zynqmp" ]; then
+    DTB="zynqmp-zcu102-rev1.0.dtb"
+    TARGET_HOSTNAME="zcu102"
+elif [ ${MACHINE} == "ultra96-zynqmp" ]; then
+    DTB="zynqmp-zcu100-revC.dtb"
+    TARGET_HOSTNAME="ultra96"
+elif [ ${MACHINE} == "db-zynqmp" ]; then
+    DTB="zynqmp-zcu102-rev1.0.dtb"
+    TARGET_HOSTNAME="zynqmp"
+else
+    echo "Unknown MACHINE: ${MACHINE}"
+    exit 1
 fi
 
 if [ "x${1}" = "x" ]; then
@@ -47,26 +70,31 @@ fi
 
 SRCDIR=${OETMP}/deploy/images/${MACHINE}
 
+if [ ! -f ${SRCDIR}/${DTB} ]; then
+    echo "Failed to find dtb: ${SRCDIR}/${DTB}"
+    exit 1
+fi
+
+echo "MACHINE: ${MACHINE}"
+
 echo "IMAGE: $image"
 
-if [ "x${3}" = "x" ]; then
-    TARGET_HOSTNAME=zynqmp
-else
+if [ "x${3}" != "x" ]; then
     TARGET_HOSTNAME=${3}
 fi
 
 echo "HOSTNAME: $TARGET_HOSTNAME"
 
-if [ -f "${SRCDIR}/${image}-image-${MACHINE}.tar.gz" ]; then
-    rootfs=${SRCDIR}/${image}-image-${MACHINE}.tar.gz
-elif [ -f "${SRCDIR}/${image}-${MACHINE}.tar.gz" ]; then
-    rootfs=${SRCDIR}/${image}-${MACHINE}.tar.gz
+if [ -f "${SRCDIR}/${image}-image-${MACHINE}.tar.xz" ]; then
+    rootfs=${SRCDIR}/${image}-image-${MACHINE}.tar.xz
+elif [ -f "${SRCDIR}/${image}-${MACHINE}.tar.xz" ]; then
+    rootfs=${SRCDIR}/${image}-${MACHINE}.tar.xz
 elif [ -f "${SRCDIR}/${image}" ]; then
     rootfs=${SRCDIR}/${image}
 else
     echo "Rootfs file not found. Tried"
-    echo " ${SRCDIR}/${image}-image-${MACHINE}.tar.gz"
-    echo " ${SRCDIR}/${image}-${MACHINE}.tar.gz"
+    echo " ${SRCDIR}/${image}-image-${MACHINE}.tar.xz"
+    echo " ${SRCDIR}/${image}-${MACHINE}.tar.xz"
     echo " ${SRCDIR}/${image}"
     exit 1
 fi
@@ -89,16 +117,14 @@ echo "Mounting $DEV"
 sudo mount $DEV /media/card
 
 echo "Extracting ${rootfs} /media/card"
-sudo tar -C /media/card -xzf ${rootfs}
+sudo tar -C /media/card -xJf ${rootfs}
 
-if [ -f ${SRCDIR}/zynqmp-zcu102-rev1.0.dtb ]; then
-    if [ -f /media/card/boot/zynqmp-zcu102-rev1.0.dtb ]; then
-        echo "Found existing /boot/zynqmp-zcu102-rev1.0.dtb, skipping copy"
-    else
-        echo "Copying zynqmp-zcu102-rev1.0.dtb"
-        sudo mkdir -p /media/card/boot
-        sudo cp ${SRCDIR}/zynqmp-zcu102-rev1.0.dtb /media/card/boot/zynqmp-zcu102-rev1.0.dtb
-    fi
+if [ -f /media/card/boot/${DTB} ]; then
+    echo "Found existing /boot/${DTB}, skipping copy"
+else
+    echo "Copying ${DTB}"
+    sudo mkdir -p /media/card/boot
+    sudo cp ${SRCDIR}/${DTB} /media/card/boot/${DTB}
 fi
 
 echo "Generating a random-seed for urandom"

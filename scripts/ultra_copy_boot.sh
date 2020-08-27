@@ -1,22 +1,11 @@
 #!/bin/bash
 
 if [ -z ${MACHINE} ]; then
-    # try to find it
-    if [ -f ../../build/conf/local.conf ]; then
-        MACHINE=$(grep '^MACHINE' ../../build/conf/local.conf | grep -v MACHINE_ | awk '{ print $3 }' | sed 's/"//g')
-    fi
-
-    if [ -z "${MACHINE}" ]; then
-        echo "Environment variable MACHINE not set"
-        echo "Example: export MACHINE=raspberrypi4|raspberrypi3|raspberrypi0-wifi"
-        exit 1
-    fi
+    MACHINE="ultra96-zynqmp"
 fi
 
-if [ "${MACHINE}" = "zcu102-zynqmp" ]; then
-    FILES="atf-uboot.ub boot.bin u-boot.bin"
-elif [ "${MACHINE}" = "db-zynqmp" ]; then
-    FILES="atf-uboot.ub boot.bin u-boot.bin"
+if [ "${MACHINE}" == "ultra96-zynqmp" ]; then
+    FILES="boot.bin uEnv.txt"
 else
     echo "Unsupported MACHINE: $MACHINE"
     exit 1
@@ -41,21 +30,7 @@ if [ ! -d /media/card ]; then
 	exit 1
 fi
 
-if [ -z "$OETMP" ]; then
-    if [ -d "../../build/tmp" ]; then
-        OETMP="../../build/tmp"
-    fi
-fi
-
-echo "MACHINE: $MACHINE"
-echo "OETMP: $OETMP"
-
-if [ ! -d ${OETMP}/deploy/images/${MACHINE} ]; then
-    echo "Directory not found: ${OETMP}/deploy/images/${MACHINE}"
-    exit 1
-fi
-
-SRCDIR=${OETMP}/deploy/images/${MACHINE}
+SRCDIR=.
 
 for f in ${FILES}; do
     if [ ! -f ${SRCDIR}/${f} ]; then
@@ -91,17 +66,6 @@ for f in ${FILES}; do
         exit 1
     fi
 done
-
-if [ -f ./uEnv.txt ]; then
-    echo "Copying ./uEnv.txt"
-    sudo cp ./uEnv.txt /media/card/uEnv.txt
-elif [ -f ${SRCDIR}/uEnv.txt ]; then
-    echo "Copying uEnv.txt"
-    sudo cp ${SRCDIR}/uEnv.txt /media/card/uEnv.txt
-else
-    echo "No uEnv.txt found"
-fi
-
 
 echo "Unmounting ${DEV}"
 sudo umount ${DEV}

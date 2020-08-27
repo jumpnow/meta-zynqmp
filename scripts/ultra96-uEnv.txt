@@ -1,0 +1,9 @@
+dtb=/boot/zynqmp-zcu100-revC.dtb
+rootpart=2
+kernel_addr=0x80000
+dtb_addr=0x4000000
+bootargs=earlycon console=ttyPS0,115200n8 clk_ignore_unused root=/dev/mmcblk0p2 rw rootwait
+loadkernel=load mmc 0:${rootpart} ${kernel_addr} /boot/Image 
+loaddtb=load mmc 0:${rootpart} ${dtb_addr} ${dtb}
+bootkernel=run loadkernel && run loaddtb && booti ${kernel_addr} - ${dtb_addr}
+uenvcmd=run bootkernel
