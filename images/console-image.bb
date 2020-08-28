@@ -11,6 +11,7 @@ WIFI = " \
 
 IMAGE_INSTALL += " \
     mtd-utils \
+    usbutils \
     valgrind \
     zynqmp-aes-dev \
     ${WIFI} \
