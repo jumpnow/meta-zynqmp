@@ -15,8 +15,13 @@ fi
 
 if [ "${MACHINE}" = "zcu102-zynqmp" ]; then
     FILES="atf-uboot.ub boot.bin u-boot.bin"
+    UENV=zynqmp-zcu102-rev1.0.dtb
 elif [ "${MACHINE}" = "db-zynqmp" ]; then
     FILES="atf-uboot.ub boot.bin u-boot.bin"
+    UENV=zynqmp-zcu102-rev1.0.dtb
+elif [ "${MACHINE}" = "ultra96-zynqmp" ]; then
+    FILES="ultra96-boot.bin"
+    UENV=zynqmp-zcu100-revC.dtb
 else
     echo "Unsupported MACHINE: $MACHINE"
     exit 1
@@ -55,7 +60,11 @@ if [ ! -d ${OETMP}/deploy/images/${MACHINE} ]; then
     exit 1
 fi
 
-SRCDIR=${OETMP}/deploy/images/${MACHINE}
+if [ $MACHINE == "ultra96-zynqmp" ]; then
+    SRCDIR=.
+else
+    SRCDIR=${OETMP}/deploy/images/${MACHINE}
+fi
 
 for f in ${FILES}; do
     if [ ! -f ${SRCDIR}/${f} ]; then
@@ -81,23 +90,34 @@ sudo mkfs.vfat ${DEV}
 echo "Mounting $DEV"
 sudo mount ${DEV} /media/card
 
-for f in ${FILES}; do
-    echo "Copying ${f}"
-    sudo cp ${SRCDIR}/${f} /media/card
+if [ $MACHINE == "ultra96-zynqmp" ]; then
+    echo "Copying ultra96-boot.bin"
+    sudo cp ./ultra96-boot.bin /media/card/boot.bin
 
     if [ $? -ne 0 ]; then
-        echo "Error copying file ${SRCDIR}${f}"
-        sudo umount ${DEV}
-        exit 1
+	echo "Error copying ultra96-boot.bin"
+	sudo umount ${DEV}
+	exit 1
     fi
-done
+else
+    for f in ${FILES}; do
+        echo "Copying ${f}"
+        sudo cp ${SRCDIR}/${f} /media/card
+
+        if [ $? -ne 0 ]; then
+            echo "Error copying file ${SRCDIR}${f}"
+            sudo umount ${DEV}
+            exit 1
+        fi
+    done
+fi
 
 if [ -f ./uEnv.txt ]; then
-    echo "Copying ./uEnv.txt"
-    sudo cp ./uEnv.txt /media/card/uEnv.txt
-elif [ -f ${SRCDIR}/uEnv.txt ]; then
-    echo "Copying uEnv.txt"
-    sudo cp ${SRCDIR}/uEnv.txt /media/card/uEnv.txt
+    echo "Fixing up uEnv.txt in /tmp"
+    cp ./uEnv.txt /tmp/uEnv.txt
+    sed -i "s:^dtb=.*:dtb=${UENV}:" /tmp/uEnv.txt
+    echo "Copying /tmp/uEnv.txt"
+    sudo cp /tmp/uEnv.txt /media/card/uEnv.txt
 else
     echo "No uEnv.txt found"
 fi
