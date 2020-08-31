@@ -13,6 +13,7 @@ IMAGE_INSTALL += " \
     mtd-utils \
     usbutils \
     valgrind \
+    xilinx-bootbin \
     zynqmp-aes-dev \
     ${WIFI} \
 "

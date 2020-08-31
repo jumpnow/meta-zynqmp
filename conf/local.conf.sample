@@ -1,38 +1,38 @@
-# local.conf for zcu102-zynqmp dev boards
+# local.conf for some Xilinx zynqmp boards
 # Yocto 3.0 [zeus]
 # sysvinit system
 
-# mask wireguard from meta-openembedded/meta-networking
-# use version in meta-jumpnow to support kernels < 5.6
-# with wireguard-linux-compat
-BBMASK = "meta-networking/recipes-kernel/wireguard"
+XSCT_STAGING_DIR = "${TOPDIR}/xsct"
+XILINX_VER_MAIN = "2020.1"
+XSCT_TARGETS = "fsbl pmu-firmware"
 
-# avoid some warnings for overrides to unused packages
-BBMASK += "meta-xilinx/meta-xilinx-bsp/recipes-graphics/xorg-driver"
-BBMASK += "meta-xilinx/meta-xilinx-bsp/recipes-xrt/opencl-headers"
+BIF_PARTITION_ATTR_zynqmp = "fsbl pmu atf u-boot"
+
+SPL_BINARY = ""
+PREFERRED_PROVIDER_virtual/boot-bin = "xilinx-bootbin"
 
 DISTRO_FEATURES = "ext2 usbhost ${DISTRO_FEATURES_LIBC}"
 
-DISTRO_FEATURES_BACKFILL_CONSIDERED += "pulseaudio opengl"
+DISTRO_FEATURES_BACKFILL_CONSIDERED += "pulseaudio opengl rtc"
 
 PREFERRED_PROVIDER_jpeg = "libjpeg-turbo"
 
 PREFERRED_PROVIDER_udev = "eudev"
 VIRTUAL-RUNTIME_init_manager = "sysvinit"
 
-IMAGE_FSTYPES = "tar.gz"
+IMAGE_FSTYPES = "tar.xz"
 
-# DL_DIR = "/src/oe"
+DL_DIR = "/src/oe"
 
-# do not change as pmu-firmware/bootloader build has issues (TODO)
 SSTATE_DIR = "${TOPDIR}/sstate-cache"
 TMPDIR = "${TOPDIR}/tmp"
 
-MACHINE = "zcu102-zynqmp"
-BBMULTICONFIG = "pmu"
+XSCT_TARGETS = "fsbl pmu-firmware"
 
-# uncomment for kernels < 5.6
-WIREGUARD_COMPAT = "1"
+MACHINE = "zcu102-zynqmp"
+#MACHINE = "db-zynqmp"
+#MACHINE = "ultra96-zynqmp"
+BBMULTICONFIG = "pmu"
 
 DISTRO = "poky"
 PACKAGE_CLASSES = "package_ipk"

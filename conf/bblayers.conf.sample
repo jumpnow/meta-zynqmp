@@ -15,6 +15,7 @@ BBLAYERS ?= " \
   ${HOME}/poky-zeus/meta-security \
   ${HOME}/poky-zeus/meta-xilinx/meta-xilinx-bsp \
   ${HOME}/poky-zeus/meta-xilinx/meta-xilinx-standalone \
+  ${HOME}/poky-zeus/meta-xilinx-tools \
   ${HOME}/poky-zeus/meta-jumpnow \
   ${HOME}/zynqmp/meta-zynqmp \
 "

@@ -1,3 +1,8 @@
+LINUX_VERSION = "5.4"
+LINUX_VERSION_EXTENSION = "-jumpnow"
+
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${LINUX_VERSION}:"
+
 require linux-dev.inc
 
 KERNEL_CONFIG_COMMAND = "oe_runmake_call -C ${S} CC="${KERNEL_CC}" O=${B} olddefconfig"
@@ -8,11 +13,6 @@ KERNEL_DEVICETREE = "\
     xilinx/zynqmp-zcu100-revC.dtb \
     xilinx/zynqmp-zcu102-rev1.0.dtb \
 "
-
-LINUX_VERSION = "5.4"
-LINUX_VERSION_EXTENSION = "-jumpnow"
-
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${LINUX_VERSION}:"
 
 S = "${WORKDIR}/git"
 
