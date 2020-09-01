@@ -1,5 +1,5 @@
 # local.conf for some Xilinx zynqmp boards
-# Yocto 3.0 [zeus]
+# Yocto 3.0 [zeus] 
 # sysvinit system
 
 XSCT_STAGING_DIR = "${TOPDIR}/xsct"
@@ -10,6 +10,8 @@ BIF_PARTITION_ATTR_zynqmp = "fsbl pmu atf u-boot"
 
 SPL_BINARY = ""
 PREFERRED_PROVIDER_virtual/boot-bin = "xilinx-bootbin"
+
+EXTRA_IMAGEDEPENDS_remove = "u-boot-zynq-uenv"
 
 DISTRO_FEATURES = "ext2 usbhost ${DISTRO_FEATURES_LIBC}"
 
@@ -27,10 +29,8 @@ DL_DIR = "/src/oe"
 SSTATE_DIR = "${TOPDIR}/sstate-cache"
 TMPDIR = "${TOPDIR}/tmp"
 
-XSCT_TARGETS = "fsbl pmu-firmware"
-
 MACHINE = "zcu102-zynqmp"
-#MACHINE = "db-zynqmp"
+#MACHINE = "zcu102x-zynqmp"
 #MACHINE = "ultra96-zynqmp"
 BBMULTICONFIG = "pmu"
 
