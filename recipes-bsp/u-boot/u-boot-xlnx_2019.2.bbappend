@@ -1,3 +1,6 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+UBRANCH = "master"
+SRCREV = "e44c2bc102f4699e240f16e17999d7d7886042d7"
 
-SRC_URI += "file://0001-Remove-unused-boot-options.patch"
+XILINX_RELEASE_VERSION = "2020.1"
+
+HAS_PLATFORM_INIT = "xilinx_zynqmp_virt_config"
