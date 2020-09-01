@@ -19,9 +19,9 @@ if [ ${MACHINE} == "zcu102-zynqmp" ]; then
 elif [ ${MACHINE} == "ultra96-zynqmp" ]; then
     DTB="zynqmp-zcu100-revC.dtb"
     TARGET_HOSTNAME="ultra96"
-elif [ ${MACHINE} == "db-zynqmp" ]; then
+elif [ ${MACHINE} == "zcu102x-zynqmp" ]; then
     DTB="zynqmp-zcu102-rev1.0.dtb"
-    TARGET_HOSTNAME="zynqmp"
+    TARGET_HOSTNAME="zcu102x"
 else
     echo "Unknown MACHINE: ${MACHINE}"
     exit 1

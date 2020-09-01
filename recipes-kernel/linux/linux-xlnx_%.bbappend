@@ -10,3 +10,5 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${LINUX_VERSION}:"
 
 # LINUX_VERSION_EXTENSION = "-${XILINX_RELEASE_VERSION}"
 LINUX_VERSION_EXTENSION = "-jumpnow"
+
+inherit kernel-devicetree
