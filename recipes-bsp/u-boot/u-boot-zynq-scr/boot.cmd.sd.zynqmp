@@ -1,0 +1,4 @@
+setenv bootargs console=ttyPS0,115200n8 root=/dev/mmcblk0p2 rw rootwait earlycon clk_ignore_unused
+load mmc 0:2 ${kernel_addr_r} /boot/Image 
+load mmc 0:2 ${fdt_addr_r} /boot/@@DEVICE_TREE_NAME@@ 
+booti ${kernel_addr_r} - ${fdt_addr_r}
