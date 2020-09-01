@@ -13,19 +13,7 @@ if [ -z ${MACHINE} ]; then
     fi
 fi
 
-if [ "${MACHINE}" = "zcu102-zynqmp" ]; then
-    FILES="boot.bin"
-    UENV=zynqmp-zcu102-rev1.0.dtb
-elif [ "${MACHINE}" = "db-zynqmp" ]; then
-    FILES="boot.bin"
-    UENV=zynqmp-zcu102-rev1.0.dtb
-elif [ "${MACHINE}" = "ultra96-zynqmp" ]; then
-    FILES="boot.bin"
-    UENV=zynqmp-zcu100-revC.dtb
-else
-    echo "Unsupported MACHINE: $MACHINE"
-    exit 1
-fi
+FILES="boot.bin boot.scr"
 
 if [ "x${1}" = "x" ]; then
 	echo "Usage: ${0} <block device>"
@@ -96,17 +84,6 @@ for f in ${FILES}; do
         exit 1
     fi
 done
-
-if [ -f ./uEnv.txt ]; then
-    echo "Fixing up uEnv.txt in /tmp"
-    cp ./uEnv.txt /tmp/uEnv.txt
-    sed -i "s:^dtb=.*:dtb=${UENV}:" /tmp/uEnv.txt
-    echo "Copying /tmp/uEnv.txt"
-    sudo cp /tmp/uEnv.txt /media/card/uEnv.txt
-else
-    echo "No uEnv.txt found"
-fi
-
 
 echo "Unmounting ${DEV}"
 sudo umount ${DEV}
