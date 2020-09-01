@@ -2,16 +2,10 @@
 
 Custom generic meta-layer for zynqmp boards.
 
-Only tested with a zcu102 dev board.
+Tested with
 
-Things that go in this layer
-
-* kernel / driver customization
-* u-boot customization
-* PMU customization
-* PMU config object fetch package (uses default from embeddedsw repo)
-* FPGA bitstream fetch package (not written)
-* userland board specific packages
+* Xilinx ZCU102 dev board
+* Avnet Ultra96v2 board
 
 Setup a build directory
 
@@ -22,7 +16,7 @@ Setup a build directory
           multiconfig/
               pmu.conf
 
-Examples for local.conf, bblayers.conf and pmu.conf are provided.
+Examples for local.conf, bblayers.conf and pmu.conf are provided under conf/.
 
 Requires:
 
@@ -38,6 +32,9 @@ Requires:
     URI: https://github.com/Xilinx/meta-xilinx
     branch: zeus
 
+    URI: git://github.com/Xilinx/meta-xilinx-tools.git
+    branch: rel-v2020.1
+
     URI: https://github.com/jumpnow/meta-jumpnow.git
     branch: zeus
 
@@ -47,6 +44,7 @@ Latest commits:
     meta-openembedded 2b5dd1eb8
     meta-security 440c37f
     meta-xilinx b82343a
+    meta-xilinx-tools dce26f5
     meta-jumpnow 1c39af3
 
 
