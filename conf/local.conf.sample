@@ -6,7 +6,7 @@ XSCT_STAGING_DIR = "${TOPDIR}/xsct"
 XILINX_VER_MAIN = "2020.1"
 XSCT_TARGETS = "fsbl pmu-firmware"
 
-BIF_PARTITION_ATTR_zynqmp = "fsbl pmu atf u-boot"
+FPGA_MNGR_RECONFIG_ENABLE = "1"
 
 SPL_BINARY = ""
 PREFERRED_PROVIDER_virtual/boot-bin = "xilinx-bootbin"
@@ -29,8 +29,8 @@ DL_DIR = "/src/oe"
 SSTATE_DIR = "${TOPDIR}/sstate-cache"
 TMPDIR = "${TOPDIR}/tmp"
 
-MACHINE = "zcu102-zynqmp"
-#MACHINE = "zcu102x-zynqmp"
+#MACHINE = "zcu102-zynqmp"
+MACHINE = "zcu102x-zynqmp"
 #MACHINE = "ultra96-zynqmp"
 BBMULTICONFIG = "pmu"
 
