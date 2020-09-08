@@ -69,7 +69,7 @@ else
 fi
 
 echo "Formatting FAT partition on $DEV"
-sudo mkfs.vfat ${DEV}
+sudo mkfs.vfat ${DEV} -n BOOT
 
 echo "Mounting $DEV"
 sudo mount ${DEV} /media/card
