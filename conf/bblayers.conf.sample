@@ -1,0 +1,17 @@
+# POKY_BBLAYERS_CONF_VERSION is increased each time build/conf/bblayers.conf
+# changes incompatibly
+POKY_BBLAYERS_CONF_VERSION = "2"
+
+BBPATH = "${TOPDIR}"
+BBFILES ?= ""
+
+BBLAYERS ?= " \
+  ${HOME}/poky-honister/meta \
+  ${HOME}/poky-honister/meta-poky \
+  ${HOME}/poky-honister/meta-openembedded/meta-oe \
+  ${HOME}/poky-honister/meta-openembedded/meta-networking \
+  ${HOME}/poky-honister/meta-openembedded/meta-perl \
+  ${HOME}/poky-honister/meta-openembedded/meta-python \
+  ${HOME}/poky-honister/meta-security \
+  ${HOME}/zynqmp/meta-zynqmp \
+"
