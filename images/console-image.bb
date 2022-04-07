@@ -1,4 +1,4 @@
-SUMMARY = "A console development image for the zynqmp"
+SUMMARY = "A console image for the zynqmp"
 
 IMAGE_FEATURES += "package-management"
 IMAGE_LINGUAS = "en-us"
@@ -13,29 +13,6 @@ CORE_OS = " \
 
 KERNEL_EXTRA = " \
     kernel-modules \
-"
-
-DEV_SDK = " \
-    binutils binutils-symlinks \
-    coreutils \
-    cpp cpp-symlinks \
-    diffutils \
-    elfutils elfutils-binutils \
-    file \
-    gcc gcc-symlinks \
-    gdb \
-    g++ g++-symlinks \
-    gettext \
-    git \
-    ldd \
-    libstdc++ libstdc++-dev \
-    libtool \
-    ltrace \
-    make \
-    perl-modules \
-    pkgconfig \
-    python3-modules \
-    strace \
 "
 
 EXTRA_TOOLS = " \
@@ -66,11 +43,6 @@ EXTRA_TOOLS = " \
     zip \
 "
 
-SECURITY_TOOLS = " \
-    checksec \
-    nmap \
-"
-
 SYSTEMD_STUFF = " \
     systemd-analyze \
     systemd-bash-completion \
@@ -78,10 +50,8 @@ SYSTEMD_STUFF = " \
 
 IMAGE_INSTALL += " \
     ${CORE_OS} \
-    ${DEV_SDK} \
     ${EXTRA_TOOLS} \
     ${KERNEL_EXTRA} \
-    ${SECURITY_TOOLS} \
     ${SYSTEMD_STUFF} \
 "
 
