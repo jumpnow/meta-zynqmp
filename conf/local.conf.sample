@@ -16,6 +16,9 @@ MACHINE = "zcu102-zynqmp"
 
 PREFERRED_PROVIDER_virtual/kernel = "linux-stable"
 
+# linux-stable_5.17 is available 
+PREFERRED_VERSION_linux-stable = "5.15.%"
+
 # DL_DIR = "/src/honister"
 # SSTATE_DIR = "/oe9/zynqmp/sstate-cache"
 # TMPDIR = "/oe9/zynqmp/tmp-honister"
