@@ -1,8 +1,15 @@
+DESCRIPTION = "ARM Trusted Firmware"
+
+PROVIDES = "virtual/arm-trusted-firmware"
+
 ATF_VERSION = "2.6"
-SRCREV = "67ca59c67f542322554d78820bf9ddaa736d6a84"
-BRANCH = "xlnx_rebase_v2.6"
+SRCREV = "09438da10a8556de0a9be8b2484ba789f97aab02"
+BRANCH = "master"
+
+LICENSE = "BSD"
 LIC_FILES_CHKSUM = "file://license.rst;md5=1dd070c98a281d18d9eefd938729b031"
 
+COMPATIBLE_MACHINE = "zcu102-zynqmp"
 
 include arm-trusted-firmware.inc
 
