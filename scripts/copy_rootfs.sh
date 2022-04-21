@@ -1,5 +1,7 @@
 #!/bin/bash
 
+TMP_MNT=/mnt
+
 DTB="zynq-zc706.dtb"
 
 if [ -z ${MACHINE} ]; then
@@ -20,8 +22,8 @@ if [ $? -ne 1 ]; then
     exit 1
 fi
 
-if [ ! -d /media/card ]; then
-    echo "Temporary mount point [/media/card] not found"
+if [ ! -d "$TMP_MNT" ]; then
+    echo "Temporary mount point [ ${TMP_MNT} ] not found"
     exit 1
 fi
 
@@ -95,27 +97,21 @@ echo "Formatting $DEV as ext4"
 sudo mkfs.ext4 -q -L ROOT $DEV
 
 echo "Mounting $DEV"
-sudo mount $DEV /media/card
+sudo mount $DEV $TMP_MNT
 
-echo "Extracting ${rootfs} /media/card"
-sudo tar -C /media/card -xzf ${rootfs}
+echo "Extracting ${rootfs} ${TMP_MNT}"
+sudo tar -C ${TMP_MNT} -xzf ${rootfs}
 
 echo "Generating a random-seed for urandom"
-mkdir -p /media/card/var/lib/systemd
-sudo dd if=/dev/urandom of=/media/card/var/lib/systemd/random-seed bs=512 count=1
-sudo chmod 600 /media/card/var/lib/systemd/random-seed
+mkdir -p ${TMP_MNT}/var/lib/systemd
+sudo dd if=/dev/urandom of=${TMP_MNT}/var/lib/systemd/random-seed bs=512 count=1
+sudo chmod 600 ${TMP_MNT}/var/lib/systemd/random-seed
 
 echo "Writing ${TARGET_HOSTNAME} to /etc/hostname"
 export TARGET_HOSTNAME
-sudo -E bash -c 'echo ${TARGET_HOSTNAME} > /media/card/etc/hostname'
-
-if [ -f ./interfaces ]; then
-    echo "Writing ./interfaces to /media/card/etc/network/"
-    sudo cp ./interfaces /media/card/etc/network/interfaces
-fi
+sudo -E bash -c 'echo ${TARGET_HOSTNAME} > ${TMP_MNT}/etc/hostname'
 
 echo "Unmounting $DEV"
 sudo umount $DEV
 
 echo "Done"
-

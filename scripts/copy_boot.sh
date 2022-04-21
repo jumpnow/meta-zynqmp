@@ -1,11 +1,13 @@
 #!/bin/bash
 
+TMP_MNT=/mnt
+
 if [ -z ${MACHINE} ]; then
     MACHINE="zcu102-zynqmp"
 fi
 
 if [ "${MACHINE}" = "zcu102-zynqmp" ]; then
-    FILES="arm-trusted-firmware.bin boot.bin u-boot.img boot.scr"
+    FILES="boot.bin u-boot.itb boot.scr"
 else
     echo "Unsupported MACHINE: $MACHINE"
     exit 1
@@ -25,8 +27,8 @@ if [ $? -ne 1 ]; then
     exit 1
 fi
 
-if [ ! -d /media/card ]; then
-    echo "Temporary mount point [/media/card] not found"
+if [ ! -d "$TMP_MNT" ]; then
+    echo "Temporary mount point [${TMP_MNT}] not found"
     exit 1
 fi
 
@@ -77,11 +79,11 @@ echo "Formatting FAT partition on $DEV"
 sudo mkfs.vfat ${DEV}
 
 echo "Mounting $DEV"
-sudo mount ${DEV} /media/card
+sudo mount ${DEV} ${TMP_MNT}
 
 for f in ${FILES}; do
     echo "Copying ${f}"
-    sudo cp ${SRCDIR}/${f} /media/card
+    sudo cp ${SRCDIR}/${f} ${TMP_MNT}
 
     if [ $? -ne 0 ]; then
         echo "Error copying file ${SRCDIR}${f}"
