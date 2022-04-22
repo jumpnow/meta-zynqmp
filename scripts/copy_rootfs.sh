@@ -109,7 +109,8 @@ sudo chmod 600 ${TMP_MNT}/var/lib/systemd/random-seed
 
 echo "Writing ${TARGET_HOSTNAME} to /etc/hostname"
 export TARGET_HOSTNAME
-sudo -E bash -c 'echo ${TARGET_HOSTNAME} > ${TMP_MNT}/etc/hostname'
+export TMP_MNT
+sudo -E bash -c "echo ${TARGET_HOSTNAME} > ${TMP_MNT}/etc/hostname"
 
 echo "Unmounting $DEV"
 sudo umount $DEV
