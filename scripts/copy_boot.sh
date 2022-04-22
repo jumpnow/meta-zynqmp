@@ -1,13 +1,13 @@
 #!/bin/bash
 
-TMP_MNT=/mnt
+mnt=/mnt
 
 if [ -z ${MACHINE} ]; then
     MACHINE="zcu102-zynqmp"
 fi
 
 if [ "${MACHINE}" = "zcu102-zynqmp" ]; then
-    FILES="boot.bin u-boot.itb boot.scr"
+    files="boot.bin u-boot.itb boot.scr"
 else
     echo "Unsupported MACHINE: $MACHINE"
     exit 1
@@ -18,17 +18,17 @@ if [ "x${1}" = "x" ]; then
     exit 0
 fi
 
-mount | grep '^/' | grep -q ${1}
+mount | grep '^/' | grep -q "$1"
 
 if [ $? -ne 1 ]; then
     echo "Looks like partitions on device /dev/${1} are mounted"
     echo "Not going to work on a device that is currently in use"
-    mount | grep ${1}
+    mount | grep "$1"
     exit 1
 fi
 
-if [ ! -d "$TMP_MNT" ]; then
-    echo "Temporary mount point [${TMP_MNT}] not found"
+if [ ! -d "$mnt" ]; then
+    echo "Temporary mount point [ $mnt ] not found"
     exit 1
 fi
 
@@ -50,51 +50,50 @@ fi
 
 echo "OETMP: $OETMP"
 
-if [ ! -d ${OETMP}/deploy/images/${MACHINE} ]; then
+if [ ! -d "${OETMP}/deploy/images/${MACHINE}" ]; then
     echo "Directory not found: ${OETMP}/deploy/images/${MACHINE}"
     exit 1
 fi
 
-SRCDIR=${OETMP}/deploy/images/${MACHINE}
+srcdir="${OETMP}/deploy/images/${MACHINE}"
 
-for f in ${FILES}; do
-    if [ ! -f ${SRCDIR}/${f} ]; then
-        echo "File not found: ${SRCDIR}/${f}"
+for f in $files; do
+    if [ ! -f "${srcdir}/${f}" ]; then
+        echo "File not found: ${srcdir}/${f}"
         exit 1
     fi
 done
 
-if [ -b ${1} ]; then
-	DEV=${1}
+if [ -b "$1" ]; then
+	dev="$1"
 elif [ -b "/dev/${1}1" ]; then
-	DEV=/dev/${1}1
+	dev="/dev/${1}1"
 elif [ -b "/dev/${1}p1" ]; then
-	DEV=/dev/${1}p1
+	dev="/dev/${1}p1"
 else
 	echo "Block device not found: /dev/${1}1 or /dev/${1}p1"
 	exit 1
 fi
 
-echo "Formatting FAT partition on $DEV"
-sudo mkfs.vfat ${DEV}
+echo "Formatting FAT partition on $dev"
+sudo mkfs.vfat "$dev"
 
-echo "Mounting $DEV"
-sudo mount ${DEV} ${TMP_MNT}
+echo "Mounting $dev"
+sudo mount "$dev" "$mnt"
 
-for f in ${FILES}; do
-    echo "Copying ${f}"
-    sudo cp ${SRCDIR}/${f} ${TMP_MNT}
+for f in $files; do
+    echo "Copying $f"
+    sudo cp "${srcdir}/${f}" "$mnt"
 
     if [ $? -ne 0 ]; then
-        echo "Error copying file ${SRCDIR}${f}"
-        sudo umount ${DEV}
+        echo "Error copying file ${srcdir}${f}"
+        sudo umount "$dev"
         exit 1
     fi
 done
 
-echo "Unmounting ${DEV}"
+echo "Unmounting $dev"
 sudo sync
-sudo umount ${DEV}
+sudo umount "$dev"
 
 echo "Done"
-
