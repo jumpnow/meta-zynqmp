@@ -1,8 +1,8 @@
 # Local configuration for meta-zynqmp images
 # Only tested with zcu102-zynqmp dev boards
-# Yocto Project 3.4 Poky distribution [honister] branch
+# Yocto Project 4.0 Poky distribution [kirkstone] branch
 
-LICENSE_FLAGS_WHITELIST += "xilinx"
+LICENSE_FLAGS_ACCEPTED += "xilinx"
 
 DISTRO_FEATURES = "ext2 security systemd usbhost ${DISTRO_FEATURES_LIBC}"
 
@@ -19,9 +19,9 @@ PREFERRED_PROVIDER_virtual/kernel = "linux-stable"
 # linux-stable_5.17 is available 
 PREFERRED_VERSION_linux-stable = "5.15.%"
 
-# DL_DIR = "/src/honister"
-# SSTATE_DIR = "/oe9/zynqmp/sstate-cache"
-# TMPDIR = "/oe9/zynqmp/tmp-honister"
+# DL_DIR = "/oe/dl/kirkstone"
+# SSTATE_DIR = "/oe/zynqmp/sstate-cache"
+# TMPDIR = "/oe/zynqmp/tmp-kirkstone"
 
 DISTRO = "poky"
 PACKAGE_CLASSES = "package_ipk"
@@ -30,7 +30,6 @@ SDKMACHINE = "x86_64"
 
 EXTRA_IMAGE_FEATURES = "debug-tweaks"
 
-USER_CLASSES = "image-prelink"
 PATCHRESOLVE = "noop"
 RM_OLD_IMAGE = "1"
 INHERIT += "rm_work"
