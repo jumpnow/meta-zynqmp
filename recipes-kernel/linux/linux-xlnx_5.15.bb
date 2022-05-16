@@ -16,8 +16,8 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/linux-xlnx-${LINUX_VERSION}:"
 
 S = "${WORKDIR}/git"
 
-PV = "5.15.19"
-SRCREV = "b0c1be301e78c320df8c4d93b18393bfd7fd4e9d"
+PV = "5.15.36"
+SRCREV = "9ef3be1de28ec61f4dad2b16b1097b7e2270a5a6"
 SRC_URI = " \
     git://github.com/Xilinx/linux-xlnx.git;protocol=https;branch=xlnx_rebase_v5.15_LTS \
     file://defconfig \
