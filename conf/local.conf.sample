@@ -2,8 +2,6 @@
 # Only tested with zcu102-zynqmp dev boards
 # Yocto Project 4.0 Poky distribution [kirkstone] branch
 
-LICENSE_FLAGS_ACCEPTED += "xilinx"
-
 DISTRO_FEATURES = "ext2 security systemd usbhost ${DISTRO_FEATURES_LIBC}"
 
 DISTRO_FEATURES_BACKFILL_CONSIDERED += "pulseaudio sysvinit"
