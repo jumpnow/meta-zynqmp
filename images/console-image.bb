@@ -43,6 +43,10 @@ EXTRA_TOOLS = " \
     zip \
 "
 
+SECURITY_STUFF = " \
+    wireguard-tools \
+"
+
 SYSTEMD_STUFF = " \
     systemd-analyze \
     systemd-bash-completion \
@@ -52,6 +56,7 @@ IMAGE_INSTALL += " \
     ${CORE_OS} \
     ${EXTRA_TOOLS} \
     ${KERNEL_EXTRA} \
+    ${SECURITY_STUFF} \
     ${SYSTEMD_STUFF} \
 "
 
