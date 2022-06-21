@@ -6,7 +6,10 @@ KERNEL_CONFIG_COMMAND = "oe_runmake_call -C ${S} CC="${KERNEL_CC}" O=${B} olddef
 
 COMPATIBLE_MACHINE = "zcu102-zynqmp"
 
-KERNEL_DEVICETREE = "xilinx/zynqmp-zcu102-rev1.0.dtb"
+KERNEL_DEVICETREE = "\
+    xilinx/zynqmp-zcu102-rev1.1.dtb \
+    xilinx/zynqmp-zcu102-rev1.0.dtb \
+"
 
 LINUX_VERSION = "5.18"
 
