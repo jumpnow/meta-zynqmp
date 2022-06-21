@@ -1,5 +1,5 @@
 setenv console ttyPS0,115200
-setenv fdtfile zynqmp-zcu102-rev1.0.dtb
+setenv fdtfile @@DEFAULT_DTB@@
 setenv bootpart 0:2
 setenv bootdir /boot
 setenv mmcroot /dev/mmcblk0p2 rw

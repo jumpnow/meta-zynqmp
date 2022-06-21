@@ -16,8 +16,8 @@ EXTRA_OEMAKE:append = " BL31=${BL31}"
 
 do_configure:append () {
     if [ -f ${B}/.config ]; then
-        sed -i '/CONFIG_DEFAULT_DEVICE_TREE/c\CONFIG_DEFAULT_DEVICE_TREE="zynqmp-zcu102-rev1.0"' ${B}/.config
-        sed -i '/CONFIG_OF_LIST/c\CONFIG_OF_LIST="zynqmp-zcu102-rev1.0"' ${B}/.config
+        sed -i '/CONFIG_DEFAULT_DEVICE_TREE/c\CONFIG_DEFAULT_DEVICE_TREE="${DEFAULT_DTB}"' ${B}/.config
+        sed -i '/CONFIG_OF_LIST/c\CONFIG_OF_LIST="${DEFAULT_DTB}"' ${B}/.config
         sed -i '/CONFIG_PMUFW_INIT_FILE/c\CONFIG_PMUFW_INIT_FILE="${DEPLOY_DIR_IMAGE}/pmufw.bin"' ${B}/.config
     fi
 
