@@ -105,6 +105,9 @@ mkdir -p "${mnt}/var/lib/systemd"
 sudo dd status=none if=/dev/urandom of="${mnt}/var/lib/systemd/random-seed" bs=512 count=1
 sudo chmod 600 "${mnt}/var/lib/systemd/random-seed"
 
+echo "Writing current datetime to ${mnt}/etc/timestamp"
+sudo -E bash -c "date +'%Y%m%d%H%M%S' > ${mnt}/etc/timestamp"
+
 echo "Writing ${target_hostname} to ${mnt}/etc/hostname"
 export target_hostname
 export mnt
