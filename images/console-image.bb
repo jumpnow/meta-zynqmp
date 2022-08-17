@@ -31,9 +31,11 @@ EXTRA_TOOLS = " \
     iptables \
     less \
     lsof \
+    ltrace \
     netcat-openbsd \
     parted \
     procps \
+    strace \
     sysfsutils \
     tcpdump \
     util-linux \
