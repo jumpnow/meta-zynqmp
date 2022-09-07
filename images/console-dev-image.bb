@@ -23,14 +23,8 @@ DEV_SDK = " \
     python3-modules \
 "
 
-SECURITY_TOOLS = " \
-    checksec \
-    nmap \
-"
-
 IMAGE_INSTALL += " \
     ${DEV_SDK} \
-    ${SECURITY_TOOLS} \
 "
 
 export IMAGE_BASENAME = "console-dev-image"
