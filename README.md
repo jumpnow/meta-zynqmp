@@ -13,8 +13,8 @@ This layer depends on:
 
 Latest commits:
 
-    poky 4cc0e9438b
-    meta-openembedded df452d9d9
+    poky f53ab3a2ff
+    meta-openembedded 9e539aaed
     meta-security cc20e2a
 
 meta-zynqmp layer maintainer: Scott Ellis <scott@jumpnowtek.com>
